@@ -1,31 +1,35 @@
-import * as React from 'react'
-import { LayoutDashboard, FileText, ListChecks, Sprout } from 'lucide-react'
+import * as React from "react";
+import { LayoutDashboard, FileText, ListChecks, Sprout } from "lucide-react";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
-type NavLabel = 'Dashboard' | 'Returns' | 'Review Queue'
+type NavLabel = "Dashboard" | "Returns" | "Review Queue";
 
 type NavItem = {
-  label: NavLabel
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-}
+  label: NavLabel;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '#dashboard', icon: LayoutDashboard },
-  { label: 'Returns', href: '#returns', icon: FileText },
-  { label: 'Review Queue', href: '#review-queue', icon: ListChecks },
-]
+  { label: "Dashboard", href: "#dashboard", icon: LayoutDashboard },
+  { label: "Returns", href: "#returns", icon: FileText },
+  { label: "Review Queue", href: "#review-queue", icon: ListChecks },
+];
 
 type AppShellProps = {
   /** The nav item to mark as current. */
-  activeNav?: NavLabel
+  activeNav?: NavLabel;
   /** Heading shown in the content header. */
-  title: string
-  children: React.ReactNode
-}
+  title: string;
+  children: React.ReactNode;
+};
 
-export function AppShell({ activeNav = 'Dashboard', title, children }: AppShellProps) {
+export function AppShell({
+  activeNav = "Dashboard",
+  title,
+  children,
+}: AppShellProps) {
   return (
     <div className="flex min-h-svh bg-background text-foreground">
       <Sidebar activeNav={activeNav} />
@@ -37,7 +41,7 @@ export function AppShell({ activeNav = 'Dashboard', title, children }: AppShellP
         <main className="min-w-0 flex-1 p-6">{children}</main>
       </div>
     </div>
-  )
+  );
 }
 
 function Sidebar({ activeNav }: { activeNav: NavLabel }) {
@@ -53,29 +57,29 @@ function Sidebar({ activeNav }: { activeNav: NavLabel }) {
       </div>
       <nav aria-label="Primary" className="flex flex-col gap-1 p-3">
         {NAV_ITEMS.map((item) => {
-          const isActive = item.label === activeNav
-          const Icon = item.icon
+          const isActive = item.label === activeNav;
+          const Icon = item.icon;
           return (
             <a
               key={item.label}
               href={item.href}
-              aria-current={isActive ? 'page' : undefined}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <Icon className="size-4 shrink-0" />
               {item.label}
             </a>
-          )
+          );
         })}
       </nav>
     </aside>
-  )
+  );
 }
 
 function UserBadge() {
@@ -92,5 +96,5 @@ function UserBadge() {
         DR
       </span>
     </div>
-  )
+  );
 }

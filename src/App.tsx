@@ -1,7 +1,7 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from "lucide-react";
 
-import { AppShell } from '@/components/app-shell'
-import { Button } from '@/components/ui/button'
+import { AppShell } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 
 function App() {
   return (
@@ -13,8 +13,9 @@ function App() {
             The preparer workspace shell
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Design system, fonts, and test harness are wired up. Returns, source traceability,
-            trust signals, and the actionable dashboard build on top of this.
+            Design system, fonts, and test harness are wired up. Returns, source
+            traceability, trust signals, and the actionable dashboard build on
+            top of this.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button>
@@ -26,7 +27,7 @@ function App() {
         </div>
       </div>
     </AppShell>
-  )
+  );
 }
 
-export default App
+export default App;
