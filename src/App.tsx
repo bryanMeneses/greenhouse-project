@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/app-shell/app-shell";
 import { ReturnView } from "@/features/return-review/components/return-view/return-view";
 import { RETURNS } from "@/features/return-review/model/returns";
 
