@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local scratch (specs/tickets live on GitHub Issues)
+.scratch
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
