@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell/app-shell";
-import { ReturnView } from "@/features/return-review/components/return-view/return-view";
+import { ReturnReview } from "@/features/return-review/components/return-review/return-review";
 import { RETURNS } from "@/features/return-review/model/returns";
 
 function App() {
@@ -10,7 +10,7 @@ function App() {
       activeNav="Returns"
       title={`${taxReturn.client} · ${taxReturn.taxYear} Return`}
     >
-      <ReturnView return={taxReturn} />
+      <ReturnReview return={taxReturn} />
     </AppShell>
   );
 }
