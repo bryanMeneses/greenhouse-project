@@ -1,7 +1,7 @@
 import * as React from "react";
 import { FileText, Check, Pencil, Flag, Sparkles } from "lucide-react";
 
-import { Dialog, DialogCloseButton } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   currentValue,
@@ -61,7 +61,6 @@ export function ProvenanceCard({
   onEdit,
   onFlag,
 }: ProvenanceCardProps) {
-  const titleId = React.useId();
   const derivation = deriveField(field);
   const isDerived = derivation.operation !== "identity";
   const documentCount = new Set(
@@ -76,114 +75,124 @@ export function ProvenanceCard({
   );
   const isDocumentOpen = activeSource !== null;
 
+  // Radix hands focus back to <DialogTrigger> on close, but this card is opened
+  // imperatively — from a Field row or the Review Queue — so there is no trigger
+  // to return to. Capture the opener on the first render, before Radix moves
+  // focus into the panel, and return focus to it ourselves.
+  const [opener] = React.useState(
+    () => document.activeElement as HTMLElement | null,
+  );
+
   return (
-    <Dialog
-      labelledBy={titleId}
-      onClose={onClose}
-      className={cn(
-        "transition-[max-width] ease-out [transition-duration:300ms]",
-        isDocumentOpen ? "max-w-3xl" : "max-w-md",
-      )}
-    >
-      <DialogCloseButton onClose={onClose} label="Close provenance" />
-
-      <div className="flex flex-col md:flex-row md:items-stretch">
-        <div
-          className={cn(
-            "flex min-w-0 flex-col",
-            // Pinned width only while the document is docked, so the growth is
-            // the document appearing — not the card reflowing. Full width otherwise.
-            isDocumentOpen ? "md:w-96 md:shrink-0" : "w-full",
-          )}
-        >
-          <div className="border-b border-border p-5 pr-12">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Provenance
-            </p>
-            <h2
-              id={titleId}
-              className="mt-1 text-lg font-semibold tracking-tight"
-            >
-              {field.label}
-            </h2>
-            <p className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tabular-nums">
-                {formatCurrency(value)}
-              </span>
-              {isDerived && !isCorrected && (
-                <span className="text-sm text-muted-foreground tabular-nums">
-                  = {formatCalculation(derivation)}
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          opener?.focus();
+        }}
+        className={cn(
+          "max-h-[90vh] gap-0 overflow-y-auto border-border bg-card p-0 text-card-foreground",
+          // The panel grows only where the document actually docks beside the
+          // card (md+); below that it stacks, so the narrow width still fits.
+          "transition-[max-width] ease-out [transition-duration:300ms] sm:max-w-md",
+          isDocumentOpen && "md:max-w-3xl",
+        )}
+      >
+        <div className="flex flex-col md:flex-row md:items-stretch">
+          <div
+            className={cn(
+              "flex min-w-0 flex-col",
+              // Pinned width only while the document is docked, so the growth is
+              // the document appearing — not the card reflowing. Full width otherwise.
+              isDocumentOpen ? "md:w-96 md:shrink-0" : "w-full",
+            )}
+          >
+            <div className="border-b border-border p-5 pr-12">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Provenance
+              </p>
+              <DialogTitle className="mt-1 text-lg font-semibold tracking-tight">
+                {field.label}
+              </DialogTitle>
+              <p className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl font-semibold tabular-nums">
+                  {formatCurrency(value)}
                 </span>
-              )}
-            </p>
+                {isDerived && !isCorrected && (
+                  <span className="text-sm text-muted-foreground tabular-nums">
+                    = {formatCalculation(derivation)}
+                  </span>
+                )}
+              </p>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {field.confidence !== undefined && (
-                <ConfidenceBand
-                  confidence={field.confidence}
-                  percentDisplay="inline"
-                />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {field.confidence !== undefined && (
+                  <ConfidenceBand
+                    confidence={field.confidence}
+                    percentDisplay="inline"
+                  />
+                )}
+                <FieldStateBadge state={field.state} />
+              </div>
+
+              <CorrectionNote
+                field={field}
+                className="mt-3 rounded-md bg-muted px-3 py-2"
+              />
+
+              {field.rationale && (
+                <p className="mt-3 flex gap-1.5 text-xs text-muted-foreground">
+                  <Sparkles
+                    aria-hidden="true"
+                    className="mt-0.5 size-3.5 shrink-0 text-brand"
+                  />
+                  <span>{field.rationale}</span>
+                </p>
               )}
-              <FieldStateBadge state={field.state} />
             </div>
 
-            <CorrectionNote
-              field={field}
-              className="mt-3 rounded-md bg-muted px-3 py-2"
-            />
-
-            {field.rationale && (
-              <p className="mt-3 flex gap-1.5 text-xs text-muted-foreground">
-                <Sparkles
-                  aria-hidden="true"
-                  className="mt-0.5 size-3.5 shrink-0 text-brand"
-                />
-                <span>{field.rationale}</span>
+            <div className="flex flex-col gap-3 p-5">
+              <p className="text-xs font-medium text-muted-foreground">
+                {isDerived
+                  ? `Combined from ${documentCount} Source Document${documentCount > 1 ? "s" : ""}`
+                  : "Traced to 1 Source Document"}
               </p>
-            )}
-          </div>
 
-          <div className="flex flex-col gap-3 p-5">
-            <p className="text-xs font-medium text-muted-foreground">
-              {isDerived
-                ? `Combined from ${documentCount} Source Document${documentCount > 1 ? "s" : ""}`
-                : "Traced to 1 Source Document"}
-            </p>
+              {derivation.contributions.map((source, index) => (
+                <ContributionRow
+                  key={`${source.documentId}-${source.region}-${index}`}
+                  source={source}
+                  isViewing={
+                    activeSource !== null && sameSource(activeSource, source)
+                  }
+                  onToggle={() =>
+                    setActiveSource((current) =>
+                      current && sameSource(current, source) ? null : source,
+                    )
+                  }
+                />
+              ))}
+            </div>
 
-            {derivation.contributions.map((source, index) => (
-              <ContributionRow
-                key={`${source.documentId}-${source.region}-${index}`}
-                source={source}
-                isViewing={
-                  activeSource !== null && sameSource(activeSource, source)
-                }
-                onToggle={() =>
-                  setActiveSource((current) =>
-                    current && sameSource(current, source) ? null : source,
-                  )
-                }
-              />
-            ))}
-          </div>
-
-          <CorrectionActions
-            field={field}
-            currentAmount={value}
-            onAccept={onAccept}
-            onEdit={onEdit}
-            onFlag={onFlag}
-          />
-        </div>
-
-        {activeSource && (
-          <div className="min-w-0 flex-1 border-t border-border md:border-l md:border-t-0">
-            <DocumentPane
-              key={`${activeSource.documentId}-${activeSource.region}`}
-              source={activeSource}
+            <CorrectionActions
+              field={field}
+              currentAmount={value}
+              onAccept={onAccept}
+              onEdit={onEdit}
+              onFlag={onFlag}
             />
           </div>
-        )}
-      </div>
+
+          {activeSource && (
+            <div className="min-w-0 flex-1 border-t border-border md:border-l md:border-t-0">
+              <DocumentPane
+                key={`${activeSource.documentId}-${activeSource.region}`}
+                source={activeSource}
+              />
+            </div>
+          )}
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }

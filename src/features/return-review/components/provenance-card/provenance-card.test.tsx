@@ -123,23 +123,34 @@ describe("ProvenanceCard", () => {
     const onClose = vi.fn();
     renderInPage(<ProvenanceCard field={identityField} onClose={onClose} />);
 
-    await user.click(screen.getByRole("button", { name: "Close provenance" }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
     await user.keyboard("{Escape}");
 
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it("closes on a backdrop click", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderInPage(<ProvenanceCard field={identityField} onClose={onClose} />);
+
+    const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+    expect(overlay).not.toBeNull();
+    await user.click(overlay!);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("has no accessibility violations with the document docked", async () => {
     const user = userEvent.setup();
-    const { container } = renderInPage(
-      <ProvenanceCard field={summedField} onClose={vi.fn()} />,
-    );
+    renderInPage(<ProvenanceCard field={summedField} onClose={vi.fn()} />);
 
     await user.click(
       screen.getAllByRole("button", { name: "View in document" })[0],
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // Radix portals the dialog to the body, outside the render container.
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 });
 
@@ -228,7 +239,7 @@ describe("ProvenanceCard — trust & correction", () => {
   });
 
   it("has no accessibility violations with the correction actions present", async () => {
-    const { container } = renderInPage(
+    renderInPage(
       <ProvenanceCard
         field={lowConfidenceField}
         onClose={vi.fn()}
@@ -238,6 +249,7 @@ describe("ProvenanceCard — trust & correction", () => {
       />,
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // Radix portals the dialog to the body, outside the render container.
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 });

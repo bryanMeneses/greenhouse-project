@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
@@ -64,20 +64,22 @@ describe("ReturnReview — source traceability", () => {
     ).toBeInTheDocument();
 
     // Escape returns to the Return: no dialog, focus back on the Field clicked.
+    // Radix restores focus in a deferred task, hence the wait.
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(fieldButton).toHaveFocus();
+    await waitFor(() => expect(fieldButton).toHaveFocus());
   });
 
   it("has no accessibility violations while the Provenance card is open", async () => {
     const user = userEvent.setup();
-    const { container } = renderInPage();
+    renderInPage();
 
     await user.click(
       screen.getByRole("button", { name: /Review Taxable interest/ }),
     );
 
-    expect(await axe(container)).toHaveNoViolations();
+    // Radix portals the dialog to the body, outside the render container.
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 });
 
@@ -132,9 +134,7 @@ describe("ReturnReview — trust & correction", () => {
     await user.click(within(card).getByRole("button", { name: "Save" }));
 
     // Close the card and read the Return: both values are shown on the row.
-    await user.click(
-      within(card).getByRole("button", { name: "Close provenance" }),
-    );
+    await user.click(within(card).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     const note = screen.getByText(/AI said/);
