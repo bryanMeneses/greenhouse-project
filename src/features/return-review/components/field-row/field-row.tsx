@@ -5,10 +5,15 @@ import {
   FIELD_STATE_CONFIG,
   type FieldAffordance,
 } from "@/features/return-review/model/field-state";
-import type { Field } from "@/features/return-review/model/returns";
+import {
+  currentValue,
+  type Field,
+} from "@/features/return-review/model/returns";
 import { fieldSourceLabel } from "@/features/return-review/model/provenance";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FieldStateBadge } from "@/features/return-review/components/field-state-badge/field-state-badge";
+import { ConfidenceBand } from "@/features/return-review/components/confidence-band/confidence-band";
+import { CorrectionNote } from "@/features/return-review/components/correction-note/correction-note";
 
 type FieldRowProps = {
   field: Field;
@@ -24,12 +29,12 @@ export function FieldRow({ field, onInspect }: FieldRowProps) {
   const labelId = React.useId();
   const reasonId = React.useId();
   const { affordance } = FIELD_STATE_CONFIG[field.state];
-  const formatted = formatCurrency(field.value);
+  const formatted = formatCurrency(currentValue(field));
   const isLocked = field.state === "locked";
 
   return (
     <div className="flex flex-col gap-1 py-3">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <span id={labelId} className="text-sm font-medium">
             {field.label}
@@ -40,6 +45,9 @@ export function FieldRow({ field, onInspect }: FieldRowProps) {
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          {field.confidence !== undefined && (
+            <ConfidenceBand confidence={field.confidence} />
+          )}
           <FieldValue
             field={field}
             formatted={formatted}
@@ -51,6 +59,8 @@ export function FieldRow({ field, onInspect }: FieldRowProps) {
           <FieldStateBadge state={field.state} />
         </div>
       </div>
+
+      <CorrectionNote field={field} />
 
       {isLocked && field.lockedReason && (
         <p
