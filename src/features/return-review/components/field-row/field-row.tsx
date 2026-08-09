@@ -6,6 +6,7 @@ import {
   type FieldAffordance,
 } from "@/features/return-review/model/field-state";
 import type { Field } from "@/features/return-review/model/returns";
+import { fieldSourceLabel } from "@/features/return-review/model/provenance";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FieldStateBadge } from "@/features/return-review/components/field-state-badge/field-state-badge";
 
@@ -34,7 +35,7 @@ export function FieldRow({ field, onInspect }: FieldRowProps) {
             {field.label}
           </span>
           <span className="block text-xs text-muted-foreground">
-            {field.sourceDocument}
+            {fieldSourceLabel(field)}
           </span>
         </div>
 
