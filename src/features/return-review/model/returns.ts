@@ -20,12 +20,22 @@ export type FieldSource = {
   operator?: "add" | "subtract";
 };
 
+/**
+ * A Preparer's correction to an AI-extracted Field (challenge 10). The AI's
+ * original value stays in the Field's `value`; this records what the Preparer
+ * changed it to, so both can be shown ("AI said $4,200 · you changed to $4,250").
+ */
+export type FieldCorrection = {
+  /** The value the Preparer entered in place of the AI's. */
+  value: number;
+};
+
 /** A single value on a Return, tied to the Source Document it was extracted from. */
 export type Field = {
   id: string;
   /** What the value represents, e.g. "Wages, tips, other comp". */
   label: string;
-  /** The extracted amount, in whole dollars. Formatted at the display edge. */
+  /** The AI-extracted amount, in whole dollars. Stays put even after a correction. */
   value: number;
   state: FieldState;
   /** The Source Document shown on the compact row, e.g. "W-2 (Acme Corp)". */
@@ -36,9 +46,28 @@ export type Field = {
    * Field value equals the sum of the contributions (see `deriveField`).
    */
   sources?: FieldSource[];
+  /**
+   * The AI's certainty in this extracted value, as a fraction in [0, 1]
+   * (challenge 10). Present on AI-extracted Fields; absent on preparer-entered
+   * and computed Fields. Banded for display by `bandForConfidence`.
+   */
+  confidence?: number;
+  /** The AI's evidence/reasoning in plain language, shown on the Provenance card. */
+  rationale?: string;
+  /** The Preparer's correction, if any. When set, `currentValue` returns it. */
+  correction?: FieldCorrection;
   /** Why a locked Field can't be changed. Required when `state` is "locked". */
   lockedReason?: string;
 };
+
+/**
+ * The Field's current value: the Preparer's correction if one exists, otherwise
+ * the AI's extracted value. Every display surface reads through this so a
+ * corrected Field never shows its stale AI number as the live figure.
+ */
+export function currentValue(field: Field): number {
+  return field.correction ? field.correction.value : field.value;
+}
 
 /** A group of related Fields on a Return, e.g. Income or Deductions. */
 export type Section = {
@@ -75,6 +104,8 @@ const REYES_2024: Return = {
           value: 84250,
           state: "verified",
           sourceDocument: "W-2 (Acme Corp)",
+          confidence: 0.99,
+          rationale: "Read straight from Box 1 of the Acme Corp W-2.",
           sources: [
             {
               documentId: "doc-w2-acme",
@@ -94,6 +125,8 @@ const REYES_2024: Return = {
           value: 1204,
           state: "ai-suggested",
           sourceDocument: "1099-INT (First National)",
+          confidence: 0.86,
+          rationale: "Added the interest reported on both 1099-INT forms.",
           sources: [
             {
               documentId: "doc-1099int-first",
@@ -117,6 +150,9 @@ const REYES_2024: Return = {
           value: 3410,
           state: "needs-approval",
           sourceDocument: "1099-DIV (Vanguard)",
+          confidence: 0.64,
+          rationale:
+            "Taken from Box 1a of the Vanguard 1099-DIV, but the scan was faint — worth confirming the amount.",
           sources: [
             {
               documentId: "doc-1099div-vanguard",
@@ -134,6 +170,9 @@ const REYES_2024: Return = {
           value: 6780,
           state: "ai-suggested",
           sourceDocument: "1099-B (Fidelity)",
+          confidence: 0.79,
+          rationale:
+            "Net gain from the Fidelity 1099-B: proceeds minus cost basis.",
           sources: [
             {
               documentId: "doc-1099b-fidelity",
@@ -174,6 +213,8 @@ const REYES_2024: Return = {
           value: 12340,
           state: "verified",
           sourceDocument: "1098 (Wells Fargo)",
+          confidence: 0.97,
+          rationale: "Read from Box 1 of the Wells Fargo 1098.",
           sources: [
             {
               documentId: "doc-1098-wells",
@@ -213,6 +254,9 @@ const REYES_2024: Return = {
           value: 1000,
           state: "needs-approval",
           sourceDocument: "1098-T (State University)",
+          confidence: 0.58,
+          rationale:
+            "Computed from the State University 1098-T; the eligibility rules make this one less certain.",
           sources: [
             {
               documentId: "doc-1098t-stateu",
@@ -235,6 +279,8 @@ const REYES_2024: Return = {
           value: 14120,
           state: "verified",
           sourceDocument: "W-2 (Acme Corp)",
+          confidence: 0.91,
+          rationale: "Read from Box 2 of the Acme Corp W-2.",
           sources: [
             {
               documentId: "doc-w2-acme",

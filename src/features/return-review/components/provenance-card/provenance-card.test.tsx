@@ -10,6 +10,7 @@ const taxReturn = getReturn("rtn-reyes-2024")!;
 const fields = taxReturn.sections.flatMap((s) => s.fields);
 const identityField = fields.find((f) => f.id === "wages")!;
 const summedField = fields.find((f) => f.id === "interest")!;
+const lowConfidenceField = fields.find((f) => f.id === "education-credit")!;
 
 /** The card always opens over the Return, which sits under the AppShell's h1. */
 function renderInPage(ui: React.ReactNode) {
@@ -136,6 +137,105 @@ describe("ProvenanceCard", () => {
 
     await user.click(
       screen.getAllByRole("button", { name: "View in document" })[0],
+    );
+
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe("ProvenanceCard — trust & correction", () => {
+  it("shows the Confidence band with the exact percentage and the AI's reasoning", () => {
+    renderInPage(
+      <ProvenanceCard field={lowConfidenceField} onClose={vi.fn()} />,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    // Band label plus the exact % (0.58 → 58%) printed inline on the card.
+    expect(within(dialog).getByText(/Low Confidence/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/· 58%/)).toBeInTheDocument();
+    // The AI's reasoning is summarised plainly.
+    expect(
+      within(dialog).getByText(/State University 1098-T/),
+    ).toBeInTheDocument();
+  });
+
+  it("calls onAccept with the Field id", async () => {
+    const user = userEvent.setup();
+    const onAccept = vi.fn();
+    renderInPage(
+      <ProvenanceCard
+        field={lowConfidenceField}
+        onClose={vi.fn()}
+        onAccept={onAccept}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Accept/ }));
+    expect(onAccept).toHaveBeenCalledWith("education-credit");
+  });
+
+  it("calls onFlag with the Field id", async () => {
+    const user = userEvent.setup();
+    const onFlag = vi.fn();
+    renderInPage(
+      <ProvenanceCard
+        field={lowConfidenceField}
+        onClose={vi.fn()}
+        onFlag={onFlag}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Flag/ }));
+    expect(onFlag).toHaveBeenCalledWith("education-credit");
+  });
+
+  it("edits the value through an inline form, handing up the parsed amount", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    renderInPage(
+      <ProvenanceCard
+        field={lowConfidenceField}
+        onClose={vi.fn()}
+        onEdit={onEdit}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Edit/ }));
+
+    const input = screen.getByLabelText("Correct the value");
+    await user.clear(input);
+    await user.type(input, "1250");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onEdit).toHaveBeenCalledWith("education-credit", 1250);
+  });
+
+  it("shows the AI's original value beside the correction", () => {
+    // A Field the Preparer has already corrected: original $1,000 → $1,250.
+    const correctedField = {
+      ...lowConfidenceField,
+      state: "verified" as const,
+      correction: { value: 1250 },
+    };
+    renderInPage(<ProvenanceCard field={correctedField} onClose={vi.fn()} />);
+
+    const dialog = screen.getByRole("dialog");
+    // The note keeps the AI's original beside the Preparer's new value.
+    const note = within(dialog).getByText(/AI said/);
+    expect(note).toHaveTextContent("AI said $1,000 · you changed to $1,250");
+    // The correction is the headline figure and also appears in the note.
+    expect(within(dialog).getAllByText("$1,250")).toHaveLength(2);
+  });
+
+  it("has no accessibility violations with the correction actions present", async () => {
+    const { container } = renderInPage(
+      <ProvenanceCard
+        field={lowConfidenceField}
+        onClose={vi.fn()}
+        onAccept={vi.fn()}
+        onEdit={vi.fn()}
+        onFlag={vi.fn()}
+      />,
     );
 
     expect(await axe(container)).toHaveNoViolations();
