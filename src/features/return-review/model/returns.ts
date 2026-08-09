@@ -79,12 +79,38 @@ export type Section = {
 /** Where a Return sits in its lifecycle. */
 export type Stage = "intake" | "in-review" | "ready-to-file";
 
+/**
+ * Who a next action sits with. A Preparer-owned Open Item is the Preparer's to
+ * clear; a Client-owned one means the Return is blocked waiting on the taxpayer —
+ * the signal that lands a Return in "Waiting on others" on the dashboard (#6).
+ */
+export type OpenItemOwner = "preparer" | "client";
+
+/**
+ * An outstanding action on a Return, with a clear owner. CONTEXT.md's definition
+ * also carries urgency; that isn't a per-item field yet — the dashboard derives a
+ * Return's urgency from its deadline, blockers, and Review Queue (`rankDashboard`).
+ */
+export type OpenItem = {
+  id: string;
+  /** What needs doing, e.g. "Confirm dividend amount on corrected 1099-DIV". */
+  label: string;
+  owner: OpenItemOwner;
+};
+
 /** A tax return prepared for one Client for one tax year. */
 export type Return = {
   id: string;
   client: string;
   taxYear: number;
   stage: Stage;
+  /**
+   * The filing deadline, as an ISO date (YYYY-MM-DD). Drives the dashboard's
+   * overdue / near-deadline ranking (#6), measured against a reference "today".
+   */
+  deadline: string;
+  /** Outstanding actions on the Return; Client-owned ones mean it's blocked. */
+  openItems: OpenItem[];
   sections: Section[];
 };
 
@@ -93,6 +119,19 @@ const REYES_2024: Return = {
   client: "Reyes Household",
   taxYear: 2024,
   stage: "in-review",
+  deadline: "2026-09-15",
+  openItems: [
+    {
+      id: "reyes-confirm-dividends",
+      label: "Confirm ordinary dividends against the Vanguard 1099-DIV",
+      owner: "preparer",
+    },
+    {
+      id: "reyes-education-credit",
+      label: "Re-check education-credit eligibility on the 1098-T",
+      owner: "preparer",
+    },
+  ],
   sections: [
     {
       id: "income",
@@ -305,8 +344,256 @@ const REYES_2024: Return = {
   ],
 };
 
+/**
+ * The reference "today" the seed dashboard ranks against (#6). Fixed so the
+ * grouped, deadline-driven ordering renders identically on every load instead of
+ * drifting with the wall clock. `rankDashboard` still accepts any `now` for tests.
+ */
+export const SEED_TODAY = new Date("2026-08-08T00:00:00");
+
+/**
+ * A compact spec for a roster Return. REYES_2024 is the hand-authored showcase
+ * (full Provenance, real corrections); the rest of the roster exists to give the
+ * dashboard a realistic, legible volume of Returns to rank, so `makeReturn` builds
+ * valid-but-lighter Returns from just the signals the ranking cares about.
+ */
+type ReturnSpec = {
+  id: string;
+  client: string;
+  taxYear: number;
+  stage: Stage;
+  deadline: string;
+  /** How many low-Confidence Fields are still awaiting review. */
+  lowConfidence: number;
+  /** Client-owned Open Items — each one makes the Return blocked on the Client. */
+  clientBlockers?: string[];
+  /** Preparer-owned Open Items — actions the Preparer still owns. */
+  preparerItems?: string[];
+};
+
+/** Source Documents a generated low-Confidence Field can trace back to. */
+const LOW_CONFIDENCE_POOL = [
+  {
+    label: "Ordinary dividends",
+    title: "1099-DIV (Vanguard)",
+    documentId: "doc-1099div-vanguard",
+    region: "box-1a",
+  },
+  {
+    label: "Taxable interest",
+    title: "1099-INT (First National)",
+    documentId: "doc-1099int-first",
+    region: "box-1",
+  },
+  {
+    label: "Capital gains",
+    title: "1099-B (Fidelity)",
+    documentId: "doc-1099b-fidelity",
+    region: "proceeds",
+  },
+] as const;
+
+function makeReturn(spec: ReturnSpec): Return {
+  const openItems: OpenItem[] = [
+    ...(spec.clientBlockers ?? []).map((label, i) => ({
+      id: `${spec.id}-client-${i}`,
+      label,
+      owner: "client" as const,
+    })),
+    ...(spec.preparerItems ?? []).map((label, i) => ({
+      id: `${spec.id}-prep-${i}`,
+      label,
+      owner: "preparer" as const,
+    })),
+  ];
+
+  const wages: Field = {
+    id: `${spec.id}-wages`,
+    label: "Wages, tips, other comp",
+    value: 72000,
+    state: "verified",
+    sourceDocument: "W-2 (Acme Corp)",
+    confidence: 0.98,
+    rationale: "Read straight from Box 1 of the W-2.",
+    sources: [
+      {
+        documentId: "doc-w2-acme",
+        page: 1,
+        region: "box-1",
+        snippet: "Box 1  Wages, tips, other comp .............. 72,000.00",
+        amount: 72000,
+      },
+    ],
+  };
+
+  // Below the Medium cutoff (0.70) so each one lands in the Review Queue and
+  // counts toward the Return's low-Confidence stat on the dashboard.
+  const lowConfidenceFields: Field[] = Array.from(
+    { length: spec.lowConfidence },
+    (_, i): Field => {
+      const source = LOW_CONFIDENCE_POOL[i % LOW_CONFIDENCE_POOL.length];
+      const amount = 1200 + i * 400;
+      return {
+        id: `${spec.id}-lc-${i}`,
+        label: source.label,
+        value: amount,
+        state: "needs-approval",
+        sourceDocument: source.title,
+        confidence: 0.55 + i * 0.04,
+        rationale: "The scan was faint — worth confirming this amount.",
+        sources: [
+          {
+            documentId: source.documentId,
+            page: 1,
+            region: source.region,
+            snippet: `${source.label} ...... ${amount.toLocaleString("en-US")}.00`,
+            amount,
+          },
+        ],
+      };
+    },
+  );
+
+  const charitable: Field = {
+    id: `${spec.id}-charitable`,
+    label: "Charitable contributions",
+    value: 2500,
+    state: "editable",
+    sourceDocument: "Client-provided receipts",
+  };
+
+  return {
+    id: spec.id,
+    client: spec.client,
+    taxYear: spec.taxYear,
+    stage: spec.stage,
+    deadline: spec.deadline,
+    openItems,
+    sections: [
+      {
+        id: "income",
+        title: "Income",
+        fields: [wages, ...lowConfidenceFields],
+      },
+      { id: "deductions", title: "Deductions", fields: [charitable] },
+    ],
+  };
+}
+
+/**
+ * The rest of the roster, spread across deadlines, blockers, low-Confidence
+ * counts, and Stages so the dashboard has a realistic volume to group and rank
+ * (all relative to SEED_TODAY, 2026-08-08).
+ */
+const ROSTER: Return[] = [
+  // Needs you now — overdue.
+  makeReturn({
+    id: "rtn-nguyen-2024",
+    client: "Nguyen Family",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-07-30",
+    lowConfidence: 2,
+    clientBlockers: ["Waiting on the client's corrected 1099-INT"],
+    preparerItems: ["Reconcile interest across both 1099-INTs"],
+  }),
+  makeReturn({
+    id: "rtn-okafor-2024",
+    client: "Okafor LLC",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-08-01",
+    lowConfidence: 1,
+    preparerItems: ["Confirm the S-corp officer wages"],
+  }),
+  // Needs you now — near deadline.
+  makeReturn({
+    id: "rtn-abbott-2024",
+    client: "Abbott & Sons",
+    taxYear: 2024,
+    stage: "intake",
+    deadline: "2026-08-08",
+    lowConfidence: 0,
+    preparerItems: ["Kick off intake review"],
+  }),
+  makeReturn({
+    id: "rtn-delacruz-2024",
+    client: "Dela Cruz Ventures",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-08-11",
+    lowConfidence: 1,
+  }),
+  // Needs you now — low-Confidence Fields awaiting review.
+  makeReturn({
+    id: "rtn-brenner-2024",
+    client: "Brenner Consulting",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-09-30",
+    lowConfidence: 2,
+  }),
+  makeReturn({
+    id: "rtn-castillo-2024",
+    client: "Castillo Trust",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-10-15",
+    lowConfidence: 3,
+  }),
+  // Waiting on others — blocked on the Client.
+  makeReturn({
+    id: "rtn-owens-2024",
+    client: "Owens Retail",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-10-01",
+    lowConfidence: 1,
+    clientBlockers: ["Need signed engagement letter"],
+  }),
+  makeReturn({
+    id: "rtn-silva-2024",
+    client: "Silva Restaurant Group",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-09-20",
+    lowConfidence: 2,
+    clientBlockers: ["Awaiting K-1s from two partnerships"],
+  }),
+  makeReturn({
+    id: "rtn-park-2024",
+    client: "Park Holdings",
+    taxYear: 2024,
+    stage: "intake",
+    deadline: "2026-11-15",
+    lowConfidence: 0,
+    clientBlockers: [
+      "Missing prior-year return",
+      "Awaiting brokerage 1099 consolidated",
+    ],
+  }),
+  // On track — in progress, nothing pressing.
+  makeReturn({
+    id: "rtn-vasquez-2024",
+    client: "Vasquez & Co",
+    taxYear: 2024,
+    stage: "in-review",
+    deadline: "2026-11-01",
+    lowConfidence: 0,
+    preparerItems: ["Final read-through before sign-off"],
+  }),
+  makeReturn({
+    id: "rtn-underwood-2024",
+    client: "Underwood Estate",
+    taxYear: 2024,
+    stage: "ready-to-file",
+    deadline: "2026-10-30",
+    lowConfidence: 0,
+  }),
+];
+
 /** All seed Returns. The single source of truth for Field data. */
-export const RETURNS: Return[] = [REYES_2024];
+export const RETURNS: Return[] = [REYES_2024, ...ROSTER];
 
 /** Look up a seed Return by id. */
 export function getReturn(id: string): Return | undefined {
