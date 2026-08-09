@@ -1,10 +1,7 @@
 import * as React from "react";
 import { ListChecks } from "lucide-react";
 
-import {
-  currentValue,
-  type Field,
-} from "@/features/return-review/model/returns";
+import { currentValue, type Field } from "@/features/returns/model/returns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ConfidenceBand } from "@/features/return-review/components/confidence-band/confidence-band";
 import { FieldStateBadge } from "@/features/return-review/components/field-state-badge/field-state-badge";

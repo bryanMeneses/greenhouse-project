@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { FieldRow } from "./field-row";
-import type { Field } from "@/features/return-review/model/returns";
+import type { Field } from "@/features/returns/model/returns";
 
 const inspectableField: Field = {
   id: "interest",

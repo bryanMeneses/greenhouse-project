@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router";
 import {
   AlertTriangle,
   ChevronRight,
@@ -10,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { Return, Stage } from "@/features/return-review/model/returns";
+import type { Return, Stage } from "@/features/returns/model/returns";
 import {
   DASHBOARD_GROUP_CONFIG,
   DASHBOARD_GROUP_ORDER,
@@ -19,15 +20,13 @@ import {
   rankDashboard,
   type RankedReturn,
   type ReturnUrgency,
-} from "@/features/return-review/model/dashboard";
+} from "@/features/dashboard/model/dashboard";
 import { cn } from "@/lib/utils";
 
 type DashboardProps = {
   returns: Return[];
   /** Reference "today" the ranking measures deadlines against. */
   now: Date;
-  /** Open a Return's review view (challenge 07 → the review surface). */
-  onOpenReturn: (returnId: string) => void;
 };
 
 const STAGE_LABEL: Record<Stage, string> = {
@@ -108,7 +107,7 @@ function formatDeadline(ranked: RankedReturn): {
  * carries the Return's Stage, Open Item count, and low-Confidence Field count, and
  * opens straight into that Return's review.
  */
-export function Dashboard({ returns, now, onOpenReturn }: DashboardProps) {
+export function Dashboard({ returns, now }: DashboardProps) {
   const ranked = rankDashboard(returns, now);
 
   return (
@@ -121,14 +120,7 @@ export function Dashboard({ returns, now, onOpenReturn }: DashboardProps) {
       {DASHBOARD_GROUP_ORDER.map((group) => {
         const rows = ranked.filter((r) => r.group === group);
         if (rows.length === 0) return null;
-        return (
-          <DashboardGroup
-            key={group}
-            group={group}
-            rows={rows}
-            onOpenReturn={onOpenReturn}
-          />
-        );
+        return <DashboardGroup key={group} group={group} rows={rows} />;
       })}
     </div>
   );
@@ -137,11 +129,9 @@ export function Dashboard({ returns, now, onOpenReturn }: DashboardProps) {
 function DashboardGroup({
   group,
   rows,
-  onOpenReturn,
 }: {
   group: (typeof DASHBOARD_GROUP_ORDER)[number];
   rows: RankedReturn[];
-  onOpenReturn: (returnId: string) => void;
 }) {
   const headingId = React.useId();
   const { label, description } = DASHBOARD_GROUP_CONFIG[group];
@@ -166,7 +156,7 @@ function DashboardGroup({
             key={row.return.id}
             className="border-b border-border last:border-b-0"
           >
-            <DashboardRow row={row} onOpenReturn={onOpenReturn} />
+            <DashboardRow row={row} />
           </li>
         ))}
       </ul>
@@ -174,13 +164,7 @@ function DashboardGroup({
   );
 }
 
-function DashboardRow({
-  row,
-  onOpenReturn,
-}: {
-  row: RankedReturn;
-  onOpenReturn: (returnId: string) => void;
-}) {
+function DashboardRow({ row }: { row: RankedReturn }) {
   const { return: taxReturn, openItemCount, lowConfidenceCount } = row;
   const urgency = URGENCY_CONFIG[row.urgency];
   const deadline = formatDeadline(row);
@@ -188,9 +172,8 @@ function DashboardRow({
   const summary = `Open ${taxReturn.client}, ${taxReturn.taxYear} Return. ${STAGE_LABEL[taxReturn.stage]}. ${urgency.label}. ${deadline.text}. ${openItemCount} Open Item${openItemCount === 1 ? "" : "s"}, ${lowConfidenceCount} low-Confidence Field${lowConfidenceCount === 1 ? "" : "s"}.`;
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpenReturn(taxReturn.id)}
+    <Link
+      to={`/returns/${taxReturn.id}`}
       aria-label={summary}
       className={cn(
         "flex w-full items-center gap-4 px-5 py-4 text-left transition-colors",
@@ -244,7 +227,7 @@ function DashboardRow({
         aria-hidden="true"
         className="size-4 shrink-0 text-muted-foreground"
       />
-    </button>
+    </Link>
   );
 }
 

@@ -1,7 +1,7 @@
 import {
   FIELD_STATE_CONFIG,
   type FieldState,
-} from "@/features/return-review/model/field-state";
+} from "@/features/returns/model/field-state";
 import { cn } from "@/lib/utils";
 
 type FieldStateBadgeProps = {

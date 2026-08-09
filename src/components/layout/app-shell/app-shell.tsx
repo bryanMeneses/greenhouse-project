@@ -1,38 +1,34 @@
 import * as React from "react";
-import { LayoutDashboard, FileText, ListChecks, Sprout } from "lucide-react";
+import { Link, useLocation } from "react-router";
+import { LayoutDashboard, ListChecks, Sprout } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type NavLabel = "Dashboard" | "Returns" | "Review Queue";
+/** Base nav-item layout, shared by the live link and the disabled placeholder. */
+const NAV_ITEM_BASE =
+  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium";
 
-type NavItem = {
-  label: NavLabel;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "#dashboard", icon: LayoutDashboard },
-  { label: "Returns", href: "#returns", icon: FileText },
-  { label: "Review Queue", href: "#review-queue", icon: ListChecks },
-];
+/** Live link treatment; the active route gets the accented, filled look. */
+function navLinkClass(isActive: boolean) {
+  return cn(
+    NAV_ITEM_BASE,
+    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+  );
+}
 
 type AppShellProps = {
-  /** The nav item to mark as current. */
-  activeNav?: NavLabel;
   /** Heading shown in the content header. */
   title: string;
   children: React.ReactNode;
 };
 
-export function AppShell({
-  activeNav = "Dashboard",
-  title,
-  children,
-}: AppShellProps) {
+export function AppShell({ title, children }: AppShellProps) {
   return (
     <div className="flex min-h-svh bg-background text-foreground">
-      <Sidebar activeNav={activeNav} />
+      <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
           <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
@@ -44,7 +40,12 @@ export function AppShell({
   );
 }
 
-function Sidebar({ activeNav }: { activeNav: NavLabel }) {
+function Sidebar() {
+  const { pathname } = useLocation();
+  // A Return's review (`/returns/:id`) is a drill-in from the dashboard, so the
+  // one nav item reads as current there too — not just on the landing route.
+  const dashboardActive = pathname === "/" || pathname.startsWith("/returns");
+
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
@@ -56,27 +57,38 @@ function Sidebar({ activeNav }: { activeNav: NavLabel }) {
         </span>
       </div>
       <nav aria-label="Primary" className="flex flex-col gap-1 p-3">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.label === activeNav;
-          const Icon = item.icon;
-          return (
-            <a
-              key={item.label}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {item.label}
-            </a>
-          );
-        })}
+        {/*
+         * The dashboard is the app's one destination; a Return's review is a
+         * drill-in from it, so this stays current across `/returns/:id` too and
+         * the nav always shows where you are.
+         */}
+        <Link
+          to="/"
+          aria-current={dashboardActive ? "page" : undefined}
+          className={navLinkClass(dashboardActive)}
+        >
+          <LayoutDashboard className="size-4 shrink-0" />
+          Dashboard
+        </Link>
+
+        {/*
+         * A global, cross-Return queue isn't built yet — today the Review Queue
+         * lives inside a single Return's review. Shown disabled so the nav hints
+         * at what's coming without a dead link.
+         */}
+        <span
+          aria-disabled="true"
+          className={cn(
+            NAV_ITEM_BASE,
+            "cursor-not-allowed text-muted-foreground/50",
+          )}
+        >
+          <ListChecks className="size-4 shrink-0" />
+          Review Queue
+          <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            Soon
+          </span>
+        </span>
       </nav>
     </aside>
   );

@@ -1,14 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { axe } from "vitest-axe";
 
 import { Dashboard } from "./dashboard";
-import type {
-  Field,
-  OpenItem,
-  Return,
-} from "@/features/return-review/model/returns";
+import type { Field, OpenItem, Return } from "@/features/returns/model/returns";
 
 const NOW = new Date("2026-08-08T00:00:00");
 
@@ -55,9 +51,18 @@ const returns: Return[] = [
   makeReturn("rtn-calm", "Underwood Estate", { deadline: "2026-11-01" }),
 ];
 
+/** Rows are router links, so the dashboard needs a router in scope. */
+function renderDashboard() {
+  return render(
+    <MemoryRouter>
+      <Dashboard returns={returns} now={NOW} />
+    </MemoryRouter>,
+  );
+}
+
 describe("Dashboard", () => {
   it("groups Returns into Needs you now / Waiting on others / On track", () => {
-    render(<Dashboard returns={returns} now={NOW} onOpenReturn={vi.fn()} />);
+    renderDashboard();
 
     expect(
       screen.getByRole("heading", { name: /Needs you now/i }),
@@ -71,35 +76,28 @@ describe("Dashboard", () => {
   });
 
   it("renders a row per Return with Stage, Open Item, and low-Confidence stats", () => {
-    render(<Dashboard returns={returns} now={NOW} onOpenReturn={vi.fn()} />);
+    renderDashboard();
 
-    // Each row is a button whose accessible name summarizes its stats.
-    const overdue = screen.getByRole("button", { name: /Nguyen Family/i });
+    // Each row is a link whose accessible name summarizes its stats.
+    const overdue = screen.getByRole("link", { name: /Nguyen Family/i });
     expect(overdue).toHaveAccessibleName(/In review/i);
     expect(overdue).toHaveAccessibleName(/Overdue/i);
     expect(overdue).toHaveAccessibleName(/1 low-Confidence Field/i);
 
-    const blocked = screen.getByRole("button", { name: /Owens Retail/i });
+    const blocked = screen.getByRole("link", { name: /Owens Retail/i });
     expect(blocked).toHaveAccessibleName(/1 Open Item/i);
   });
 
-  it("opens the Return's review when its row is clicked", async () => {
-    const onOpenReturn = vi.fn();
-    render(
-      <Dashboard returns={returns} now={NOW} onOpenReturn={onOpenReturn} />,
-    );
+  it("links each row to the Return's review URL (deep-linkable)", () => {
+    renderDashboard();
 
-    await userEvent.click(
-      screen.getByRole("button", { name: /Nguyen Family/i }),
-    );
-
-    expect(onOpenReturn).toHaveBeenCalledWith("rtn-overdue");
+    expect(
+      screen.getByRole("link", { name: /Nguyen Family/i }),
+    ).toHaveAttribute("href", "/returns/rtn-overdue");
   });
 
   it("has no accessibility violations", async () => {
-    const { container } = render(
-      <Dashboard returns={returns} now={NOW} onOpenReturn={vi.fn()} />,
-    );
+    const { container } = renderDashboard();
 
     expect(await axe(container)).toHaveNoViolations();
   });

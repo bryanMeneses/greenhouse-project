@@ -1,8 +1,8 @@
-import type { FieldSource } from "@/features/return-review/model/returns";
+import type { FieldSource } from "@/features/returns/model/returns";
 import {
   getSourceDocument,
   sourceDocumentTitle,
-} from "@/features/return-review/model/source-documents";
+} from "@/features/returns/model/source-documents";
 import { cn } from "@/lib/utils";
 
 type DocumentPaneProps = {

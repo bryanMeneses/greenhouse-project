@@ -4,12 +4,9 @@ import { Lock } from "lucide-react";
 import {
   FIELD_STATE_CONFIG,
   type FieldAffordance,
-} from "@/features/return-review/model/field-state";
-import {
-  currentValue,
-  type Field,
-} from "@/features/return-review/model/returns";
-import { fieldSourceLabel } from "@/features/return-review/model/provenance";
+} from "@/features/returns/model/field-state";
+import { currentValue, type Field } from "@/features/returns/model/returns";
+import { fieldSourceLabel } from "@/features/returns/model/provenance";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FieldStateBadge } from "@/features/return-review/components/field-state-badge/field-state-badge";
 import { ConfidenceBand } from "@/features/return-review/components/confidence-band/confidence-band";
