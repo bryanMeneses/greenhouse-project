@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import type { Return, Stage } from "@/features/return-review/model/returns";
+import type { Return, Stage } from "@/features/returns/model/returns";
 import { FieldRow } from "@/features/return-review/components/field-row/field-row";
 
 const STAGE_LABEL: Record<Stage, string> = {

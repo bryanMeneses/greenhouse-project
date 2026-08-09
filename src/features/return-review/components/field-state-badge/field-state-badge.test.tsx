@@ -6,7 +6,7 @@ import { FieldStateBadge } from "./field-state-badge";
 import {
   FIELD_STATES,
   FIELD_STATE_CONFIG,
-} from "@/features/return-review/model/field-state";
+} from "@/features/returns/model/field-state";
 
 describe("FieldStateBadge", () => {
   it("shows the configured label for each Field State", () => {

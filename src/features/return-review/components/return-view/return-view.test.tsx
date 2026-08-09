@@ -3,12 +3,12 @@ import { render, screen, within } from "@testing-library/react";
 import { axe } from "vitest-axe";
 
 import { ReturnView } from "./return-view";
-import { getReturn } from "@/features/return-review/model/returns";
+import { getReturn } from "@/features/returns/model/returns";
 import {
   FIELD_STATES,
   FIELD_STATE_CONFIG,
   type FieldState,
-} from "@/features/return-review/model/field-state";
+} from "@/features/returns/model/field-state";
 
 const taxReturn = getReturn("rtn-reyes-2024")!;
 

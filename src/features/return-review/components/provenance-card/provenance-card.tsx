@@ -7,15 +7,15 @@ import {
   currentValue,
   type Field,
   type FieldSource,
-} from "@/features/return-review/model/returns";
+} from "@/features/returns/model/returns";
 import {
   deriveField,
   formatCalculation,
-} from "@/features/return-review/model/provenance";
+} from "@/features/returns/model/provenance";
 import {
   sourceDocumentTitle,
   sourceLineLabel,
-} from "@/features/return-review/model/source-documents";
+} from "@/features/returns/model/source-documents";
 import { DocumentPane } from "@/features/return-review/components/document-pane/document-pane";
 import { ConfidenceBand } from "@/features/return-review/components/confidence-band/confidence-band";
 import { FieldStateBadge } from "@/features/return-review/components/field-state-badge/field-state-badge";

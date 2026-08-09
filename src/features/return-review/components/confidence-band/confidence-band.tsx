@@ -2,7 +2,7 @@ import {
   bandForConfidence,
   formatConfidence,
   CONFIDENCE_BAND_CONFIG,
-} from "@/features/return-review/model/confidence";
+} from "@/features/returns/model/confidence";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,

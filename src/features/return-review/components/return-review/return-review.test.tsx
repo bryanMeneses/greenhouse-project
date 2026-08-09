@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
 import { ReturnReview } from "./return-review";
-import { getReturn } from "@/features/return-review/model/returns";
+import { getReturn } from "@/features/returns/model/returns";
 
 const taxReturn = getReturn("rtn-reyes-2024")!;
 

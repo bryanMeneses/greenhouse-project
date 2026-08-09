@@ -1,5 +1,5 @@
-import { reviewQueue } from "./review-queue";
-import type { Field, Return } from "./returns";
+import { reviewQueue } from "@/features/returns/model/review-queue";
+import type { Field, Return } from "@/features/returns/model/returns";
 
 /**
  * The three buckets the landing dashboard sorts Returns into (#6):

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
 import { ReviewQueuePanel } from "./review-queue-panel";
-import type { Field } from "@/features/return-review/model/returns";
+import type { Field } from "@/features/returns/model/returns";
 
 const dividends: Field = {
   id: "dividends",

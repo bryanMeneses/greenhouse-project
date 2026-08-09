@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import type { Field, Return } from "@/features/return-review/model/returns";
-import { reviewQueue } from "@/features/return-review/model/review-queue";
+import type { Field, Return } from "@/features/returns/model/returns";
+import { reviewQueue } from "@/features/returns/model/review-queue";
 import { ReturnView } from "@/features/return-review/components/return-view/return-view";
 import { ProvenanceCard } from "@/features/return-review/components/provenance-card/provenance-card";
 import { ReviewQueuePanel } from "@/features/return-review/components/review-queue-panel/review-queue-panel";

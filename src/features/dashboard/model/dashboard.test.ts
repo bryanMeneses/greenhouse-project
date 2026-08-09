@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 
 import { rankDashboard } from "./dashboard";
-import type { Field, OpenItem, Return, Stage } from "./returns";
+import type {
+  Field,
+  OpenItem,
+  Return,
+  Stage,
+} from "@/features/returns/model/returns";
 
 const NOW = new Date("2026-08-08T00:00:00");
 
