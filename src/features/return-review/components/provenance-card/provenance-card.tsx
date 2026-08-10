@@ -94,7 +94,7 @@ export function ProvenanceCard({
           "max-h-[90vh] gap-0 overflow-y-auto border-border bg-card p-0 text-card-foreground",
           // The panel grows only where the document actually docks beside the
           // card (md+); below that it stacks, so the narrow width still fits.
-          "transition-[max-width] ease-out [transition-duration:300ms] sm:max-w-md",
+          "transition-[max-width] ease-out duration-300 sm:max-w-md",
           isDocumentOpen && "md:max-w-3xl",
         )}
       >

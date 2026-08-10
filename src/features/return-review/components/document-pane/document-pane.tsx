@@ -24,7 +24,7 @@ export function DocumentPane({ source }: DocumentPaneProps) {
   return (
     <section
       aria-label={`${title}, page ${source.page}`}
-      className="flex flex-col bg-background p-5 animate-in fade-in-0 slide-in-from-right-4 [animation-duration:300ms]"
+      className="flex flex-col bg-background p-5 animate-in fade-in-0 slide-in-from-right-4 animation-duration-[300ms]"
     >
       {/* pr-9 keeps "Page x of n" clear of the dialog's absolute close button. */}
       <header className="mb-3 flex items-center justify-between gap-4 pr-9">
