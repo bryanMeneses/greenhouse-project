@@ -1,6 +1,6 @@
 # Tax Platform (Preparer Review)
 
-The CPA-facing side of an AI-powered tax platform: a preparer opens a client's return, reviews each AI-extracted value against its source document, and works down a prioritized list of what needs attention. This context covers only the preparer/CPA experience — the client-facing side is deliberately out of scope.
+An AI-powered tax platform for both the CPA firm and its clients: a preparer opens a client's return, reviews each AI-extracted value against its source document, and works down a prioritized list of what needs attention, while clients see a role-appropriate view of the same return. The platform is role-aware (see ADR-0004); the Preparer/CPA experience is the most built-out today, with client-facing surfaces growing per challenge.
 
 ## Language
 
@@ -13,8 +13,8 @@ The taxpayer — an individual or business — whose Return is being prepared.
 _Avoid_: customer, user, account
 
 **Preparer**:
-The CPA-firm staff member who owns and works a Return. The only role this product serves.
-_Avoid_: accountant, agent, reviewer, user
+The CPA-firm staff member who owns and works a Return. The most built-out role, but no longer the only one — the platform is role-aware (ADR-0004).
+_Avoid_: accountant, agent, user
 
 **Source Document**:
 An uploaded document (W-2, 1099-INT, …) that serves as the evidence behind values on a Return.
