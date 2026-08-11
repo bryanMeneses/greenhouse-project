@@ -67,6 +67,13 @@ export type Thread = {
   messages: Message[];
 };
 
+/**
+ * The person composing on a collaboration surface — the active User's name and
+ * the Role they're acting as (ADR-0005). Used to author optimistically-sent
+ * Messages; the Role's family decides audience filtering and compose options.
+ */
+export type Viewer = { role: Role; name: string };
+
 // ─── Audience visibility (pure) ────────────────────────────────────────────
 
 /**

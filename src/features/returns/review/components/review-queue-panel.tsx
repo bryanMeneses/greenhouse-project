@@ -3,6 +3,7 @@ import { ListChecks } from "lucide-react";
 
 import { currentValue, type Field } from "@/features/returns/shared/returns";
 import { cn, formatCurrency } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfidenceBand } from "@/features/returns/review/components/confidence-band";
 import { FieldStateBadge } from "@/features/returns/review/components/field-state-badge";
@@ -30,21 +31,31 @@ export function ReviewQueuePanel({ fields, onReview }: ReviewQueuePanelProps) {
   if (fields.length === 0) return null;
 
   const reviewedCount = fields.filter(isReviewed).length;
+  const pendingCount = fields.length - reviewedCount;
   const allReviewed = reviewedCount === fields.length;
 
   return (
     <section
       aria-labelledby={headingId}
-      className="rounded-lg border border-border bg-card shadow-sm"
+      className="rounded-lg border border-primary/30 bg-card shadow-md ring-1 ring-primary/10"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
-        <h2
-          id={headingId}
-          className="flex items-center gap-2 text-base font-semibold tracking-tight"
-        >
-          <ListChecks aria-hidden="true" className="size-4 text-primary" />
-          Review Queue
-        </h2>
+      <div className="flex items-center justify-between gap-3 border-b border-primary/20 bg-primary/5 px-5 py-3.5">
+        <div className="flex items-center gap-2">
+          <h2
+            id={headingId}
+            className="flex items-center gap-2 text-base font-semibold tracking-tight"
+          >
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <ListChecks aria-hidden="true" className="size-3.5" />
+            </span>
+            Review Queue
+          </h2>
+          {pendingCount > 0 && (
+            <Badge className="gap-1 border-warning/30 bg-warning/15 text-warning">
+              {pendingCount} to review
+            </Badge>
+          )}
+        </div>
         <p
           className={cn(
             "text-xs font-medium",

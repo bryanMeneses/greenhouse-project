@@ -78,10 +78,7 @@ export type ReturnStatus = {
  * testing like `ranking.ts`. Callers pass `SEED_TODAY` for the dashboard seed or
  * a test `now` for assertions; never `new Date()` at render time.
  */
-export function deriveReturnStatus(
-  taxReturn: Return,
-  now: Date,
-): ReturnStatus {
+export function deriveReturnStatus(taxReturn: Return, now: Date): ReturnStatus {
   const stageIndex = STAGE_ORDER.indexOf(taxReturn.stage);
 
   const steps: Step[] = STAGE_ORDER.map((key, i) => ({
@@ -124,7 +121,8 @@ export function deriveReturnStatus(
   const deadline: DeadlineState = {
     daysUntilDeadline,
     isOverdue: daysUntilDeadline < 0,
-    isNearDeadline: daysUntilDeadline >= 0 && daysUntilDeadline <= DUE_SOON_DAYS,
+    isNearDeadline:
+      daysUntilDeadline >= 0 && daysUntilDeadline <= DUE_SOON_DAYS,
   };
 
   return {
@@ -191,7 +189,5 @@ export function viewerIsWaiting(
   status: ReturnStatus,
   viewerOwner: OpenItemOwner,
 ): boolean {
-  return (
-    status.blockedBy !== null && status.blockedBy !== viewerOwner
-  );
+  return status.blockedBy !== null && status.blockedBy !== viewerOwner;
 }

@@ -10,6 +10,9 @@ function makeReturn(openItems: OpenItem[]): Return {
   return {
     id: "rtn",
     client: "Nguyen Family",
+    returnType: "Individual 1040",
+    returnNumber: "RET-2024-011",
+    owner: "Jordan Avery",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-09-15",
@@ -19,10 +22,20 @@ function makeReturn(openItems: OpenItem[]): Return {
 }
 
 const OPEN_ITEMS: OpenItem[] = [
-  { id: "r-normal", label: "Confirm bank details", owner: "client", urgency: "normal" },
+  {
+    id: "r-normal",
+    label: "Confirm bank details",
+    owner: "client",
+    urgency: "normal",
+  },
   { id: "r-high", label: "Upload your 1098", owner: "client", urgency: "high" },
   { id: "p-1", label: "Verify the 8879", owner: "preparer" },
-  { id: "closed", label: "Corrected 1099-INT", owner: "preparer", resolution: "closed" },
+  {
+    id: "closed",
+    label: "Corrected 1099-INT",
+    owner: "preparer",
+    resolution: "closed",
+  },
 ];
 
 const THREADS: Thread[] = [

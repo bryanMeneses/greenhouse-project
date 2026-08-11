@@ -37,8 +37,17 @@ export function ReturnStatus({ taxReturn }: ReturnStatusProps) {
   const blockedOnClient = status.blockedBy === "client";
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <section className="rounded-lg border border-border bg-card p-6">
+        <div className="mb-5 flex flex-col gap-0.5 border-b border-border pb-4">
+          <h2 className="text-sm font-semibold tracking-tight">
+            Return status
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Where your return stands right now — the same view your preparer
+            sees.
+          </p>
+        </div>
         <Tracker status={status} audience="client" />
 
         {/* Deadline: framed/reassuring for the Client. */}

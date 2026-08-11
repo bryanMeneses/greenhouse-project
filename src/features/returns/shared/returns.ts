@@ -128,6 +128,15 @@ export function isOpenItemActive(item: OpenItem): boolean {
 export type Return = {
   id: string;
   client: string;
+  /** The IRS form the Return is prepared on, e.g. "Individual 1040". */
+  returnType: string;
+  /**
+   * A human-facing Return id shown in the header, distinct from the internal
+   * `id`, e.g. "RET-2024-011". What a preparer would quote on the phone.
+   */
+  returnNumber: string;
+  /** The preparer who owns the Return, shown in the header, e.g. "Jordan Avery". */
+  owner: string;
   taxYear: number;
   stage: Stage;
   /**

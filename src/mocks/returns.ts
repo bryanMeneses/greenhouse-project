@@ -14,6 +14,9 @@ import type {
 const REYES_2024: Return = {
   id: "rtn-reyes-2024",
   client: "Reyes Household",
+  returnType: "Individual 1040",
+  returnNumber: "RET-2024-007",
+  owner: "Jordan Avery",
   taxYear: 2024,
   stage: "in-review",
   deadline: "2026-09-15",
@@ -267,6 +270,12 @@ type ReturnSpec = {
   taxYear: number;
   stage: Stage;
   deadline: string;
+  /** IRS form; defaults to "Individual 1040". */
+  returnType?: string;
+  /** Human-facing Return id; defaults to one derived from the id + tax year. */
+  returnNumber?: string;
+  /** Owning preparer; defaults to "Jordan Avery". */
+  owner?: string;
   /** How many low-Confidence Fields are still awaiting review. */
   lowConfidence: number;
   /** Client-owned Open Items — each one makes the Return blocked on the Client. */
@@ -375,6 +384,11 @@ function makeReturn(spec: ReturnSpec): Return {
   return {
     id: spec.id,
     client: spec.client,
+    returnType: spec.returnType ?? "Individual 1040",
+    returnNumber:
+      spec.returnNumber ??
+      `RET-${spec.taxYear}-${(spec.id.replace(/\D/g, "").slice(-3) || "000").padStart(3, "0")}`,
+    owner: spec.owner ?? "Jordan Avery",
     taxYear: spec.taxYear,
     stage: spec.stage,
     deadline: spec.deadline,
@@ -403,6 +417,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-nguyen-2024",
     client: "Nguyen Family",
+    returnNumber: "RET-2024-011",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-07-30",
@@ -411,20 +426,21 @@ const ROSTER: Return[] = [
       // Open Requests (client owns the next action), ordered by urgency in the panel.
       {
         id: NGUYEN_1098_REQUEST_ID,
-        label: "Upload your 2024 Form 1098 (mortgage interest)",
+        label: "2024 Form 1098 (mortgage interest)",
         owner: "client",
         urgency: "high",
       },
       {
         id: "rtn-nguyen-2024-req-bank",
-        label: "Confirm your bank details for direct deposit",
+        label: "Bank details for direct deposit",
         owner: "client",
         urgency: "normal",
       },
       // Client acted (signed) → flipped to the Preparer to verify; not yet closed.
       {
         id: "rtn-nguyen-2024-verify-8879",
-        label: "Verify the signed 8879 e-file authorization the client uploaded",
+        label:
+          "Verify the signed 8879 e-file authorization the client uploaded",
         owner: "preparer",
       },
       // Client provided the corrected 1099-INT; the Preparer verified and closed it.
@@ -488,7 +504,7 @@ const ROSTER: Return[] = [
     stage: "in-review",
     deadline: "2026-10-01",
     lowConfidence: 1,
-    clientBlockers: ["Need signed engagement letter"],
+    clientBlockers: ["Signed engagement letter"],
   }),
   makeReturn({
     id: "rtn-silva-2024",
@@ -497,7 +513,7 @@ const ROSTER: Return[] = [
     stage: "in-review",
     deadline: "2026-09-20",
     lowConfidence: 2,
-    clientBlockers: ["Awaiting K-1s from two partnerships"],
+    clientBlockers: ["K-1s from two partnerships"],
   }),
   makeReturn({
     id: "rtn-park-2024",
@@ -506,10 +522,7 @@ const ROSTER: Return[] = [
     stage: "intake",
     deadline: "2026-11-15",
     lowConfidence: 0,
-    clientBlockers: [
-      "Missing prior-year return",
-      "Awaiting brokerage 1099 consolidated",
-    ],
+    clientBlockers: ["Prior-year return", "Consolidated brokerage 1099"],
   }),
   // On track — in progress, nothing pressing.
   makeReturn({

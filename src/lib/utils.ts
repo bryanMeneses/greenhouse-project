@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { SEED_TODAY } from "@/mocks/returns";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -32,4 +34,22 @@ export function formatShortDate(value: string | Date): string {
       ? new Date(`${value}T00:00:00`)
       : new Date(value);
   return shortDateFormatter.format(date);
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * A relative timestamp for a message, measured against SEED_TODAY (never the wall
+ * clock) so the collaboration surfaces read identically on every load. Falls back
+ * to the short date once something is more than a week old — "3 days ago" is
+ * useful, "37 days ago" is not.
+ */
+export function formatRelativeToSeed(value: string | Date): string {
+  const then = typeof value === "string" ? new Date(value) : value;
+  const days = Math.round((SEED_TODAY.getTime() - then.getTime()) / MS_PER_DAY);
+
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return formatShortDate(value);
 }

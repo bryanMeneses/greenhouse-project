@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { deriveReturnStatus, viewerIsBlocked, viewerIsWaiting } from "./derive-status";
+import {
+  deriveReturnStatus,
+  viewerIsBlocked,
+  viewerIsWaiting,
+} from "./derive-status";
 import type { OpenItem, Return, Stage } from "./returns";
 
 const NOW = new Date("2026-08-08T00:00:00"); // matches SEED_TODAY
@@ -24,6 +28,9 @@ function makeReturn(opts: {
   return {
     id: "test-return",
     client: "Test Client",
+    returnType: "Individual 1040",
+    returnNumber: "RET-2024-001",
+    owner: "Jordan Avery",
     taxYear: 2024,
     stage: opts.stage ?? "in-review",
     deadline: opts.deadline ?? "2026-09-15",
@@ -34,21 +41,21 @@ function makeReturn(opts: {
 
 describe("deriveReturnStatus — stepper positions", () => {
   it("marks intake as current and the rest upcoming for an intake Return", () => {
-    const status = deriveReturnStatus(
-      makeReturn({ stage: "intake" }),
-      NOW,
-    );
-    expect(status.steps.map((s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`))
-      .toEqual(["intake:>", "in-review:u", "ready-to-file:u", "filed:u"]);
+    const status = deriveReturnStatus(makeReturn({ stage: "intake" }), NOW);
+    expect(
+      status.steps.map(
+        (s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`,
+      ),
+    ).toEqual(["intake:>", "in-review:u", "ready-to-file:u", "filed:u"]);
   });
 
   it("marks intake completed, in-review current, rest upcoming", () => {
-    const status = deriveReturnStatus(
-      makeReturn({ stage: "in-review" }),
-      NOW,
-    );
-    expect(status.steps.map((s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`))
-      .toEqual(["intake:c", "in-review:>", "ready-to-file:u", "filed:u"]);
+    const status = deriveReturnStatus(makeReturn({ stage: "in-review" }), NOW);
+    expect(
+      status.steps.map(
+        (s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`,
+      ),
+    ).toEqual(["intake:c", "in-review:>", "ready-to-file:u", "filed:u"]);
   });
 
   it("marks intake and in-review completed, ready-to-file current, filed upcoming", () => {
@@ -56,8 +63,11 @@ describe("deriveReturnStatus — stepper positions", () => {
       makeReturn({ stage: "ready-to-file" }),
       NOW,
     );
-    expect(status.steps.map((s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`))
-      .toEqual(["intake:c", "in-review:c", "ready-to-file:>", "filed:u"]);
+    expect(
+      status.steps.map(
+        (s) => `${s.key}:${s.completed ? "c" : s.current ? ">" : "u"}`,
+      ),
+    ).toEqual(["intake:c", "in-review:c", "ready-to-file:>", "filed:u"]);
   });
 
   it("always marks filed as upcoming (never completed or current)", () => {

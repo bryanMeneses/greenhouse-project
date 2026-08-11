@@ -1,15 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
-import { Thread } from "./thread";
+import { ThreadDetail, ThreadList } from "./thread";
+import type { OpenItem } from "./returns";
 import type { Thread as ThreadModel } from "./collaboration";
 
 const PREPARER = { role: "preparer" as const, name: "Jordan Avery" };
 const CLIENT = { role: "individual-taxpayer" as const, name: "Nguyen Family" };
 
-function thread(): ThreadModel {
+const OPEN_ITEMS: OpenItem[] = [
+  { id: "req-1098", label: "Upload your 2024 Form 1098", owner: "client" },
+];
+
+function w2Thread(): ThreadModel {
   return {
     id: "t1",
     returnId: "rtn",
@@ -51,36 +56,87 @@ function thread(): ThreadModel {
   };
 }
 
-describe("Thread — audience boundary", () => {
+/** A second thread with no internal note — for the audience filter. */
+function returnThread(): ThreadModel {
+  return {
+    id: "t2",
+    returnId: "rtn",
+    subject: { kind: "return" },
+    title: "Your 2024 return",
+    messages: [
+      {
+        id: "t2-m1",
+        threadId: "t2",
+        authorRole: "preparer",
+        authorName: "Jordan Avery",
+        audience: "client-visible",
+        body: "Welcome! I've started on your return.",
+        sentAt: "2026-07-27T09:00:00.000Z",
+      },
+    ],
+  };
+}
+
+function renderDetail(family: "firm" | "client") {
+  const viewer = family === "firm" ? PREPARER : CLIENT;
+  return render(
+    <ThreadDetail
+      thread={w2Thread()}
+      openItems={OPEN_ITEMS}
+      viewerFamily={family}
+      viewer={viewer}
+      onSend={vi.fn()}
+    />,
+  );
+}
+
+describe("ThreadDetail — audience boundary", () => {
   it("shows the Preparer every message, including the Internal note", () => {
-    render(<Thread thread={thread()} viewerFamily="firm" viewer={PREPARER} />);
+    renderDetail("firm");
 
     expect(screen.getByText(/Can you confirm Box 1/)).toBeInTheDocument();
     expect(screen.getByText(/Yes, that's correct/)).toBeInTheDocument();
     expect(
       screen.getByText(/Matches the IRS wage transcript/),
     ).toBeInTheDocument();
-    // The firm sees the audience marker on the internal note (in the message list;
-    // the compose toggle also carries an "Internal" label, hence the scope).
+    // The firm sees the audience marker on the internal note (in the message list).
     const list = screen.getByRole("list");
     expect(within(list).getByText("Internal")).toBeInTheDocument();
   });
 
   it("hides the Internal note from the Client (the leak test)", () => {
-    render(<Thread thread={thread()} viewerFamily="client" viewer={CLIENT} />);
+    renderDetail("client");
 
     expect(screen.getByText(/Yes, that's correct/)).toBeInTheDocument();
     expect(
       screen.queryByText(/Matches the IRS wage transcript/),
     ).not.toBeInTheDocument();
-    // The client never sees audience chips at all.
     expect(screen.queryByText("Internal")).not.toBeInTheDocument();
   });
 });
 
-describe("Thread — audience-aware compose", () => {
+describe("ThreadDetail — boundary notice + subject link", () => {
+  it("shows the firm the client-visible boundary notice", () => {
+    renderDetail("firm");
+    expect(screen.getByText(/Client-visible thread\./)).toBeInTheDocument();
+  });
+
+  it("reassures the client that they see only shared messages", () => {
+    renderDetail("client");
+    expect(
+      screen.getByText(/messages your preparer has shared with you/i),
+    ).toBeInTheDocument();
+  });
+
+  it("links the thread to its Subject on its own line", () => {
+    renderDetail("firm");
+    expect(screen.getByText(/Linked to W-2 \(Acme Corp\)/)).toBeInTheDocument();
+  });
+});
+
+describe("ThreadDetail — audience-aware compose", () => {
   it("gives the Preparer an audience toggle defaulting to the safer Internal", () => {
-    render(<Thread thread={thread()} viewerFamily="firm" viewer={PREPARER} />);
+    renderDetail("firm");
 
     const internal = screen.getByRole("radio", { name: /internal/i });
     const clientVisible = screen.getByRole("radio", {
@@ -88,29 +144,38 @@ describe("Thread — audience-aware compose", () => {
     });
     expect(internal).toBeChecked();
     expect(clientVisible).not.toBeChecked();
-    expect(screen.getByText("Only your firm will see this.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Only your firm will see this."),
+    ).toBeInTheDocument();
   });
 
   it("switches the compose hint when the Preparer picks Client-visible", async () => {
     const user = userEvent.setup();
-    render(<Thread thread={thread()} viewerFamily="firm" viewer={PREPARER} />);
+    renderDetail("firm");
 
     await user.click(screen.getByRole("radio", { name: /client-visible/i }));
     expect(screen.getByText("The client will see this.")).toBeInTheDocument();
   });
 
   it("gives the Client no toggle — always Client-visible", () => {
-    render(<Thread thread={thread()} viewerFamily="client" viewer={CLIENT} />);
+    renderDetail("client");
 
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
     expect(screen.getByText("The client will see this.")).toBeInTheDocument();
   });
-});
 
-describe("Thread — optimistic send", () => {
-  it("appends a Preparer message with the chosen audience", async () => {
+  it("sends the trimmed body with the chosen audience", async () => {
     const user = userEvent.setup();
-    render(<Thread thread={thread()} viewerFamily="firm" viewer={PREPARER} />);
+    const onSend = vi.fn();
+    render(
+      <ThreadDetail
+        thread={w2Thread()}
+        openItems={OPEN_ITEMS}
+        viewerFamily="firm"
+        viewer={PREPARER}
+        onSend={onSend}
+      />,
+    );
 
     await user.type(
       screen.getByRole("textbox", { name: /write a message/i }),
@@ -118,34 +183,84 @@ describe("Thread — optimistic send", () => {
     );
     await user.click(screen.getByRole("button", { name: /send/i }));
 
-    const list = screen.getByRole("list");
-    expect(
-      within(list).getByText("Following up on this."),
-    ).toBeInTheDocument();
-    // Sent as Internal (the default) — two Internal chips in the list now
-    // (seed + new). The compose toggle's "Internal" label is outside the list.
-    expect(within(list).getAllByText("Internal")).toHaveLength(2);
+    expect(onSend).toHaveBeenCalledWith("Following up on this.", "internal");
   });
 
   it("does not send an empty message", () => {
-    render(<Thread thread={thread()} viewerFamily="client" viewer={CLIENT} />);
-
+    renderDetail("client");
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
   });
 });
 
-describe("Thread — accessibility", () => {
-  it("has no violations in the Preparer view", async () => {
-    const { container } = render(
-      <Thread thread={thread()} viewerFamily="firm" viewer={PREPARER} />,
+describe("ThreadList — inbox", () => {
+  it("lists the threads as selectable rows", () => {
+    render(
+      <ThreadList
+        threads={[w2Thread(), returnThread()]}
+        openItems={OPEN_ITEMS}
+        viewerFamily="firm"
+        selectedThreadId="t1"
+        onSelect={vi.fn()}
+      />,
     );
+
+    expect(
+      screen.getByRole("button", { name: /W-2 wages question/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Your 2024 return/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("narrows the list to threads with internal notes when filtered", async () => {
+    const user = userEvent.setup();
+    render(
+      <ThreadList
+        threads={[w2Thread(), returnThread()]}
+        openItems={OPEN_ITEMS}
+        viewerFamily="firm"
+        selectedThreadId="t1"
+        onSelect={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("radio", { name: "Internal" }));
+
+    // Only the W-2 thread carries an internal note.
+    expect(
+      screen.getByRole("button", { name: /W-2 wages question/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Your 2024 return/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("calls onSelect with the clicked thread", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <ThreadList
+        threads={[w2Thread(), returnThread()]}
+        openItems={OPEN_ITEMS}
+        viewerFamily="firm"
+        selectedThreadId="t1"
+        onSelect={onSelect}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Your 2024 return/ }));
+    expect(onSelect).toHaveBeenCalledWith("t2");
+  });
+});
+
+describe("ThreadDetail — accessibility", () => {
+  it("has no violations in the Preparer view", async () => {
+    const { container } = renderDetail("firm");
     expect(await axe(container)).toHaveNoViolations();
   });
 
   it("has no violations in the Client view", async () => {
-    const { container } = render(
-      <Thread thread={thread()} viewerFamily="client" viewer={CLIENT} />,
-    );
+    const { container } = renderDetail("client");
     expect(await axe(container)).toHaveNoViolations();
   });
 });

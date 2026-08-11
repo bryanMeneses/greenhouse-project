@@ -2,7 +2,6 @@ import * as React from "react";
 
 import type { Field, Return } from "@/features/returns/shared/returns";
 import { reviewQueue } from "@/features/returns/shared/review-queue";
-import { PreparerStatusBand } from "@/features/returns/shared/preparer-status-band";
 import { ReturnView } from "@/features/returns/review/components/return-view";
 import { ProvenanceCard } from "@/features/returns/review/components/provenance-card";
 import { ReviewQueuePanel } from "@/features/returns/review/components/review-queue-panel";
@@ -50,11 +49,13 @@ function returnReducer(state: Return, action: FieldAction): Return {
 }
 
 /**
- * The Return review surface (challenges 01 + 08 + 10). Fields carry their own
- * state here so the Preparer's corrections stick: clicking a Field opens its
- * Provenance card — the trust and correction surface — and the Review Queue
+ * The Overview tab's body (challenges 01 + 08 + 10) — the review work itself,
+ * under the persistent status band that now lives at the page level. Fields carry
+ * their own state here so the Preparer's corrections stick: clicking a Field opens
+ * its Provenance card — the trust and correction surface — and the Review Queue
  * gathers the low-Confidence Fields to work through. The card and queue read from
  * the same live state, so a Field verified in the card updates everywhere at once.
+ * Income and the Review Queue sit side by side on wide screens, stacking on narrow.
  */
 export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
   const [taxReturn, dispatch] = React.useReducer(returnReducer, initialReturn);
@@ -73,8 +74,8 @@ export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <PreparerStatusBand taxReturn={taxReturn} />
-
+      {/* The Review Queue leads, full width and emphasized — the CPA's primary
+          job on the return. Income & Deductions share the space below it. */}
       <ReviewQueuePanel fields={queue} onReview={setInspectedFieldId} />
 
       <ReturnView return={taxReturn} onInspectField={setInspectedFieldId} />

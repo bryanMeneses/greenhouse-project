@@ -17,7 +17,7 @@ export function ReturnStatusPage() {
 
   return (
     <ClientLayout title="Your return">
-      <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <ReturnStatus taxReturn={taxReturn} />
         {taxReturn && (
           <CollaborationSection

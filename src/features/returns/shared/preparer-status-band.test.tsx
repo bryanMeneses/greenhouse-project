@@ -13,6 +13,9 @@ function makeReturn(opts: {
   return {
     id: "test-return",
     client: "Test Client",
+    returnType: "Individual 1040",
+    returnNumber: "RET-2024-001",
+    owner: "Jordan Avery",
     taxYear: 2024,
     stage: opts.stage ?? "in-review",
     deadline: opts.deadline ?? "2026-09-15",
@@ -23,7 +26,9 @@ function makeReturn(opts: {
 
 describe("PreparerStatusBand", () => {
   it("shows the stepper with preparer-adapted labels", () => {
-    render(<PreparerStatusBand taxReturn={makeReturn({ stage: "in-review" })} />);
+    render(
+      <PreparerStatusBand taxReturn={makeReturn({ stage: "in-review" })} />,
+    );
 
     expect(screen.getByText("Intake")).toBeInTheDocument();
     expect(screen.getByText("In review")).toBeInTheDocument();
@@ -92,7 +97,11 @@ describe("PreparerStatusBand", () => {
         taxReturn={makeReturn({
           deadline: "2026-08-01",
           openItems: [
-            { id: "oi-1", label: "Sign the engagement letter", owner: "client" },
+            {
+              id: "oi-1",
+              label: "Sign the engagement letter",
+              owner: "client",
+            },
             { id: "oi-2", label: "Reconcile interest", owner: "preparer" },
           ],
         })}
@@ -104,9 +113,7 @@ describe("PreparerStatusBand", () => {
 
   it("has no accessibility violations in clean state", async () => {
     const { container } = render(
-      <PreparerStatusBand
-        taxReturn={makeReturn({ deadline: "2026-10-15" })}
-      />,
+      <PreparerStatusBand taxReturn={makeReturn({ deadline: "2026-10-15" })} />,
     );
 
     expect(await axe(container)).toHaveNoViolations();

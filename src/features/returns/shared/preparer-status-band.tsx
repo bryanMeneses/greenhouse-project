@@ -10,6 +10,10 @@ import { Tracker, BlockingCallout } from "./tracker";
 
 type PreparerStatusBandProps = {
   taxReturn: Return;
+  /** Optional framing heading rendered inside the band (e.g. "Shared Return Status"). */
+  title?: string;
+  /** Optional subtitle under the framing heading. */
+  subtitle?: string;
 };
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -20,7 +24,11 @@ type PreparerStatusBandProps = {
  * grouped open items with blockers emphasized. Consumes the one
  * `deriveReturnStatus` module.
  */
-export function PreparerStatusBand({ taxReturn }: PreparerStatusBandProps) {
+export function PreparerStatusBand({
+  taxReturn,
+  title,
+  subtitle,
+}: PreparerStatusBandProps) {
   const status = deriveReturnStatus(taxReturn, SEED_TODAY);
 
   // Audience-relative: the Preparer is blocked when the client owns open items.
@@ -32,6 +40,16 @@ export function PreparerStatusBand({ taxReturn }: PreparerStatusBandProps) {
       aria-label="Return status"
       className="w-full rounded-lg border border-border bg-card p-5 shadow-sm md:p-6"
     >
+      {(title || subtitle) && (
+        <div className="mb-5 flex flex-col gap-0.5 border-b border-border pb-4">
+          {title && (
+            <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+          )}
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+      )}
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">
         {/* Progress: stepper, blocking, deadline. */}
         <div className="flex flex-col gap-4">

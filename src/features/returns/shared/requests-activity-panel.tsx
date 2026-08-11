@@ -18,6 +18,8 @@ type RequestsActivityPanelProps = {
   threads: Thread[];
   /** The viewer's Role family — filters activity to what they may see. */
   viewerFamily: RoleFamily;
+  /** Jump to a thread when a recent-activity message is clicked. */
+  onSelectThread?: (threadId: string) => void;
 };
 
 /**
@@ -32,6 +34,7 @@ export function RequestsActivityPanel({
   taxReturn,
   threads,
   viewerFamily,
+  onSelectThread,
 }: RequestsActivityPanelProps) {
   const headingId = React.useId();
   const requests = openRequests(taxReturn.openItems);
@@ -86,12 +89,17 @@ export function RequestsActivityPanel({
         {activity.length === 0 ? (
           <p className="text-sm text-muted-foreground">No recent messages.</p>
         ) : (
-          <ul className="flex flex-col gap-2.5">
+          <ul className="flex max-h-56 flex-col gap-2.5 overflow-y-auto">
             {activity.map((message) => (
               <ActivityRow
                 key={message.id}
                 message={message}
                 threadTitle={threadTitle(message)}
+                onSelect={
+                  onSelectThread
+                    ? () => onSelectThread(message.threadId)
+                    : undefined
+                }
               />
             ))}
           </ul>
@@ -124,12 +132,15 @@ function RequestRow({ request }: { request: OpenItem }) {
 function ActivityRow({
   message,
   threadTitle,
+  onSelect,
 }: {
   message: Message;
   threadTitle: string;
+  /** When set, the whole row becomes a button that opens the message's thread. */
+  onSelect?: () => void;
 }) {
-  return (
-    <li className="flex flex-col gap-0.5">
+  const content = (
+    <>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs font-medium">
           {message.authorName}
@@ -151,6 +162,22 @@ function ActivityRow({
           on: {threadTitle}
         </p>
       )}
+    </>
+  );
+
+  if (!onSelect) {
+    return <li className="flex flex-col gap-0.5">{content}</li>;
+  }
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {content}
+      </button>
     </li>
   );
 }

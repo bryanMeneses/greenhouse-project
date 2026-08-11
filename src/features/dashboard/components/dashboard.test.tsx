@@ -35,6 +35,9 @@ function makeReturn(
   return {
     id,
     client,
+    returnType: "Individual 1040",
+    returnNumber: "RET-2024-001",
+    owner: "Jordan Avery",
     taxYear: 2024,
     stage: "in-review",
     deadline: opts.deadline,

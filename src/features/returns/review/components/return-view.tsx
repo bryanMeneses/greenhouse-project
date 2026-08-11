@@ -18,7 +18,7 @@ export function ReturnView({
   onInspectField,
 }: ReturnViewProps) {
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="grid w-full grid-cols-1 items-start gap-6 md:grid-cols-2">
       {taxReturn.sections.map((section) => (
         <ReturnSection
           key={section.id}
