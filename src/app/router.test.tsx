@@ -99,9 +99,13 @@ describe("router", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Your return" }),
     ).toBeInTheDocument();
+    // The client sees the shared tracker with audience-adapted labels.
     expect(
-      screen.getByRole("heading", { name: /Your 2024 return/i }),
+      screen.getByRole("navigation", { name: /Return progress/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Getting started")).toBeInTheDocument();
+    expect(screen.getByText("In review")).toBeInTheDocument();
+    expect(screen.getByText("Ready to file")).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /Needs you now/i }),
     ).not.toBeInTheDocument();

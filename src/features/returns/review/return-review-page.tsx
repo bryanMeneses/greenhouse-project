@@ -86,7 +86,7 @@ export function ReturnReviewPage() {
 
   return (
     <InternalLayout title={`${taxReturn.client} · ${taxReturn.taxYear} Return`}>
-      <div className="mx-auto flex max-w-3xl flex-col gap-4">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4">
         <BackToDashboard />
         {/* key resets the review's local state when switching Returns. */}
         <ReturnReview key={taxReturn.id} return={taxReturn} />
