@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { Field, Return } from "@/features/returns/shared/returns";
 import { reviewQueue } from "@/features/returns/shared/review-queue";
+import { PreparerStatusBand } from "@/features/returns/shared/preparer-status-band";
 import { ReturnView } from "@/features/returns/review/components/return-view";
 import { ProvenanceCard } from "@/features/returns/review/components/provenance-card";
 import { ReviewQueuePanel } from "@/features/returns/review/components/review-queue-panel";
@@ -71,7 +72,9 @@ export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
   const queue = reviewQueue(taxReturn);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
+      <PreparerStatusBand taxReturn={taxReturn} />
+
       <ReviewQueuePanel fields={queue} onReview={setInspectedFieldId} />
 
       <ReturnView return={taxReturn} onInspectField={setInspectedFieldId} />

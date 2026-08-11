@@ -1,13 +1,7 @@
 import * as React from "react";
 
-import type { Return, Stage } from "@/features/returns/shared/returns";
+import type { Return } from "@/features/returns/shared/returns";
 import { FieldRow } from "@/features/returns/review/components/field-row";
-
-const STAGE_LABEL: Record<Stage, string> = {
-  intake: "Intake",
-  "in-review": "In review",
-  "ready-to-file": "Ready to file",
-};
 
 type ReturnViewProps = {
   return: Return;
@@ -24,12 +18,7 @@ export function ReturnView({
   onInspectField,
 }: ReturnViewProps) {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <p className="text-sm text-muted-foreground">
-        {taxReturn.client} · {taxReturn.taxYear} ·{" "}
-        {STAGE_LABEL[taxReturn.stage]}
-      </p>
-
+    <div className="flex w-full flex-col gap-6">
       {taxReturn.sections.map((section) => (
         <ReturnSection
           key={section.id}
