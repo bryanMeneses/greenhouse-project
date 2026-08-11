@@ -32,6 +32,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -91,6 +93,11 @@
   /* Destructive */
   --destructive: #d5455f;
   --destructive-foreground: #ffffff;
+
+  /* Warning (amber) — a "wait", not an error; distinct from destructive red and
+     brand marigold. Blocked-status callouts (challenge 06). */
+  --warning: #b45309; /* amber-700 — AA on white for text/icon/border */
+  --warning-foreground: #ffffff;
 
   /* Lines & focus */
   --border: #dbe7e2;
