@@ -1,0 +1,156 @@
+import * as React from "react";
+import { ClipboardList, MessagesSquare, AlertTriangle } from "lucide-react";
+
+import { cn, formatShortDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import type { RoleFamily } from "@/lib/roles";
+import { roleConfig } from "@/lib/roles";
+import type { OpenItem, Return } from "./returns";
+import {
+  openRequests,
+  recentActivity,
+  type Message,
+  type Thread,
+} from "./collaboration";
+
+type RequestsActivityPanelProps = {
+  taxReturn: Return;
+  threads: Thread[];
+  /** The viewer's Role family — filters activity to what they may see. */
+  viewerFamily: RoleFamily;
+};
+
+/**
+ * The one aggregation surface per Return workspace (challenge 02, ADR-0008). It
+ * leads with the Return's open Requests — Client-owned Open Items, ordered by
+ * urgency, the outstanding actions someone owns — and then recent messages,
+ * filtered to what the viewer's Role family may see. Organized around actions,
+ * never a chronological dump, and scoped to this one Return: there is
+ * deliberately no cross-client inbox.
+ */
+export function RequestsActivityPanel({
+  taxReturn,
+  threads,
+  viewerFamily,
+}: RequestsActivityPanelProps) {
+  const headingId = React.useId();
+  const requests = openRequests(taxReturn.openItems);
+  const activity = recentActivity(threads, viewerFamily);
+
+  // Map a message back to its Thread's title, so activity reads with context.
+  const threadTitle = React.useMemo(() => {
+    const byId = new Map(threads.map((t) => [t.id, t.title]));
+    return (message: Message) => byId.get(message.threadId) ?? "";
+  }, [threads]);
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col rounded-lg border border-border bg-card shadow-sm"
+    >
+      <div className="border-b border-border px-5 py-3">
+        <h2
+          id={headingId}
+          className="flex items-center gap-2 text-base font-semibold tracking-tight"
+        >
+          <ClipboardList aria-hidden="true" className="size-4 text-primary" />
+          Requests &amp; Activity
+        </h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Outstanding requests first, then recent messages — for this return.
+        </p>
+      </div>
+
+      {/* Open Requests — lead with the outstanding actions, by urgency. */}
+      <div className="flex flex-col gap-2 px-5 py-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Open requests
+        </h3>
+        {requests.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No open requests.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {requests.map((request) => (
+              <RequestRow key={request.id} request={request} />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Recent activity — messages, newest first, never a full dump. */}
+      <div className="flex flex-col gap-2 border-t border-border px-5 py-4">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <MessagesSquare aria-hidden="true" className="size-3.5" />
+          Recent activity
+        </h3>
+        {activity.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No recent messages.</p>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {activity.map((message) => (
+              <ActivityRow
+                key={message.id}
+                message={message}
+                threadTitle={threadTitle(message)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ─── Rows ────────────────────────────────────────────────────────────────────
+
+function RequestRow({ request }: { request: OpenItem }) {
+  const isUrgent = request.urgency === "high";
+  return (
+    <li className="flex items-start justify-between gap-3 rounded-md border border-border bg-background px-3 py-2">
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm">{request.label}</span>
+        <span className="text-xs text-muted-foreground">Waiting on client</span>
+      </div>
+      {isUrgent && (
+        <Badge className="shrink-0 gap-1 border-warning/30 bg-warning/15 text-warning">
+          <AlertTriangle aria-hidden="true" />
+          Urgent
+        </Badge>
+      )}
+    </li>
+  );
+}
+
+function ActivityRow({
+  message,
+  threadTitle,
+}: {
+  message: Message;
+  threadTitle: string;
+}) {
+  return (
+    <li className="flex flex-col gap-0.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs font-medium">
+          {message.authorName}
+          <span className="font-normal text-muted-foreground">
+            {" · "}
+            {roleConfig(message.authorRole).label}
+          </span>
+        </span>
+        <time
+          dateTime={message.sentAt}
+          className="shrink-0 text-xs text-muted-foreground tabular-nums"
+        >
+          {formatShortDate(message.sentAt)}
+        </time>
+      </div>
+      <p className="truncate text-sm text-foreground">{message.body}</p>
+      {threadTitle && (
+        <p className="truncate text-xs text-muted-foreground">
+          on: {threadTitle}
+        </p>
+      )}
+    </li>
+  );
+}
