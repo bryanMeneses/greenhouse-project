@@ -127,8 +127,7 @@ describe("Thread — optimistic send", () => {
     expect(within(list).getAllByText("Internal")).toHaveLength(2);
   });
 
-  it("does not send an empty message", async () => {
-    const user = userEvent.setup();
+  it("does not send an empty message", () => {
     render(<Thread thread={thread()} viewerFamily="client" viewer={CLIENT} />);
 
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();

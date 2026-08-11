@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { ClientLayout } from "@/components/layout/client-layout";
 import { InternalLayout } from "@/components/layout/internal-layout";
 import { ReturnReview } from "@/features/returns/review/components/return-review";
+import { CollaborationSection } from "@/features/returns/shared/collaboration-section";
 import { getReturn } from "@/mocks/returns";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,7 @@ function GoHome() {
  */
 export function ReturnReviewPage() {
   const { returnId } = useParams();
-  const { roleConfig } = useRole();
+  const { user, role, roleConfig } = useRole();
 
   if (roleConfig.family !== "firm") {
     return (
@@ -90,6 +91,12 @@ export function ReturnReviewPage() {
         <BackToDashboard />
         {/* key resets the review's local state when switching Returns. */}
         <ReturnReview key={taxReturn.id} return={taxReturn} />
+        <CollaborationSection
+          key={`collab-${taxReturn.id}`}
+          taxReturn={taxReturn}
+          viewerFamily={roleConfig.family}
+          viewer={{ role, name: user.name }}
+        />
       </div>
     </InternalLayout>
   );

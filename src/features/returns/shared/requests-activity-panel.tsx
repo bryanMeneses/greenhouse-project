@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ClipboardList, MessagesSquare, AlertTriangle } from "lucide-react";
 
-import { cn, formatShortDate } from "@/lib/utils";
+import { formatShortDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { RoleFamily } from "@/lib/roles";
 import { roleConfig } from "@/lib/roles";

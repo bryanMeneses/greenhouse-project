@@ -1,5 +1,6 @@
 import { ClientLayout } from "@/components/layout/client-layout";
 import { ReturnStatus } from "@/features/returns/client-view/components/return-status";
+import { CollaborationSection } from "@/features/returns/shared/collaboration-section";
 import { useRole } from "@/hooks/use-role";
 import { getReturn } from "@/mocks/returns";
 
@@ -9,14 +10,23 @@ import { getReturn } from "@/mocks/returns";
  * into the layout. Mirrors {@link import("@/features/dashboard/dashboard-page").DashboardPage}.
  */
 export function ReturnStatusPage() {
-  const { user } = useRole();
+  const { user, role, roleConfig } = useRole();
   const taxReturn = user.clientReturnId
     ? getReturn(user.clientReturnId)
     : undefined;
 
   return (
     <ClientLayout title="Your return">
-      <ReturnStatus taxReturn={taxReturn} />
+      <div className="mx-auto flex max-w-2xl flex-col gap-6">
+        <ReturnStatus taxReturn={taxReturn} />
+        {taxReturn && (
+          <CollaborationSection
+            taxReturn={taxReturn}
+            viewerFamily={roleConfig.family}
+            viewer={{ role, name: user.name }}
+          />
+        )}
+      </div>
     </ClientLayout>
   );
 }
