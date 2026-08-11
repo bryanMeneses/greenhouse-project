@@ -57,9 +57,29 @@ Where a Return sits in its lifecycle (e.g. intake → in review → ready to fil
 _Avoid_: status, state, phase
 
 **Open Item**:
-An outstanding action on a Return, with a clear owner and urgency.
+An outstanding action on a Return, with a clear owner and urgency. The single "outstanding action" object — a Request is simply an Open Item whose owner is a Client Role (see Request).
 _Avoid_: task, todo, ticket, issue
 
 **Review Queue**:
 The set of low-Confidence Fields a Preparer needs to verify so nothing slips through.
 _Avoid_: inbox, worklist
+
+**Thread**:
+A conversation anchored to exactly one Subject on a Return. Contains Messages. The unit of contextual collaboration — there is no free-floating conversation.
+_Avoid_: conversation, channel, topic, discussion
+
+**Subject**:
+What a Thread anchors to — one of a Return, a Source Document, or an Open Item (a "tax issue"). Not a Field: a question about a single value rolls up to its Source Document or becomes an Open Item.
+_Avoid_: context, target, anchor, object
+
+**Message**:
+A single post within a Thread, authored by a User acting as a Role, carrying one Message audience.
+_Avoid_: comment, note, post, reply
+
+**Message audience**:
+Who a Message is visible to: **Client-visible** (rendered to Client Roles) or **Internal** (firm-only; never shown in a Client Role view). Set per Message, so one Thread can carry both. The boundary the Preparer's compose control must make unmistakable.
+_Avoid_: visibility, privacy, scope, internal-flag
+
+**Request**:
+The client-facing framing of an Open Item whose owner is a Client Role — the firm asking the Client for a document, an answer, or a signature. Not a separate object: it _is_ an Open Item, named for its audience. "Who owns the next action" on a Thread is this Open Item's owner. Lifecycle: **Open** (owner: Client) → client acts (upload / answer / sign) → owner flips to Preparer → Preparer verifies and closes → **Closed**. Fulfillment is the _action_, not a reply; there is no auto-close on client action — the firm always verifies.
+_Avoid_: ask, task, todo, ticket
