@@ -102,6 +102,37 @@ describe("deriveReturnStatus — blocked-by", () => {
   });
 });
 
+describe("deriveReturnStatus — Closed Requests are resolved", () => {
+  it("excludes a Closed item from its owner group", () => {
+    const closed: OpenItem = {
+      id: "oi-closed",
+      label: "Corrected 1099-INT (verified)",
+      owner: "preparer",
+      resolution: "closed",
+    };
+    const status = deriveReturnStatus(
+      makeReturn({ openItems: [closed, preparerItem] }),
+      NOW,
+    );
+    expect(status.openItemsByOwner.preparer).toEqual([preparerItem]);
+  });
+
+  it("does not treat a Closed client item as blocking", () => {
+    const closedClient: OpenItem = {
+      id: "oi-closed-client",
+      label: "Upload 1098 (done, verified)",
+      owner: "client",
+      resolution: "closed",
+    };
+    const status = deriveReturnStatus(
+      makeReturn({ openItems: [closedClient] }),
+      NOW,
+    );
+    expect(status.blockedBy).toBeNull();
+    expect(status.openItemsByOwner.client).toHaveLength(0);
+  });
+});
+
 describe("deriveReturnStatus — open items grouped by owner", () => {
   it("groups items under their owner", () => {
     const status = deriveReturnStatus(

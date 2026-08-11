@@ -83,20 +83,46 @@ export type Stage = "intake" | "in-review" | "ready-to-file";
  * Who a next action sits with. A Preparer-owned Open Item is the Preparer's to
  * clear; a Client-owned one means the Return is blocked waiting on the taxpayer —
  * the signal that lands a Return in "Waiting on others" on the dashboard (#6).
+ * A Client-owned Open Item is what CONTEXT.md calls a Request (challenge 02).
  */
 export type OpenItemOwner = "preparer" | "client";
 
 /**
- * An outstanding action on a Return, with a clear owner. CONTEXT.md's definition
- * also carries urgency; that isn't a per-item field yet — the dashboard derives a
- * Return's urgency from its deadline, blockers, and Review Queue (`rankDashboard`).
+ * How an Open Item was resolved. Absent while the item is still outstanding;
+ * `"closed"` once the Preparer has verified the client's action — the terminal
+ * state of a Request's lifecycle (ADR-0008). A Closed item no longer blocks the
+ * Return and owns no next action.
+ */
+export type OpenItemResolution = "closed";
+
+/**
+ * Relative urgency of an Open Item, used to order open Requests in the "Requests &
+ * Activity" panel (challenge 02). Absent reads as `"normal"`. This is per-item and
+ * distinct from the Return-level urgency the dashboard derives (`rankDashboard`).
+ */
+export type OpenItemUrgency = "high" | "normal";
+
+/**
+ * An outstanding action on a Return, with a clear owner. A Client-owned Open Item
+ * is a Request (ADR-0008) — the same object, named for its audience. `resolution`
+ * marks a Request Closed once the Preparer verifies; `urgency` orders open Requests
+ * in the panel. Both are optional so pre-02 seed data stays valid.
  */
 export type OpenItem = {
   id: string;
   /** What needs doing, e.g. "Confirm dividend amount on corrected 1099-DIV". */
   label: string;
   owner: OpenItemOwner;
+  /** Set once resolved; a Closed Request no longer blocks or owns a next action. */
+  resolution?: OpenItemResolution;
+  /** Ordering hint for the Requests panel; absent = normal. */
+  urgency?: OpenItemUrgency;
 };
+
+/** Whether an Open Item is still outstanding — i.e. not Closed. */
+export function isOpenItemActive(item: OpenItem): boolean {
+  return item.resolution !== "closed";
+}
 
 /** A tax return prepared for one Client for one tax year. */
 export type Return = {

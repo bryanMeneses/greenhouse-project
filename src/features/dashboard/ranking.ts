@@ -1,5 +1,6 @@
 import { reviewQueue } from "@/features/returns/shared/review-queue";
 import type { Field, Return } from "@/features/returns/shared/returns";
+import { isOpenItemActive } from "@/features/returns/shared/returns";
 
 /**
  * The three buckets the landing dashboard sorts Returns into (#6):
@@ -96,9 +97,11 @@ function daysUntilDeadline(deadline: string, now: Date): number {
   return Math.round(diff / 86_400_000);
 }
 
-/** A Return is blocked on the Client when it has a Client-owned Open Item. */
+/** A Return is blocked on the Client when it has an open Client-owned Open Item (Closed Requests don't count). */
 function isBlockedOnClient(taxReturn: Return): boolean {
-  return taxReturn.openItems.some((item) => item.owner === "client");
+  return taxReturn.openItems.some(
+    (item) => item.owner === "client" && isOpenItemActive(item),
+  );
 }
 
 /**
@@ -148,7 +151,7 @@ export function rankDashboard(
       return: taxReturn,
       urgency,
       group: GROUP_FOR_URGENCY[urgency],
-      openItemCount: taxReturn.openItems.length,
+      openItemCount: taxReturn.openItems.filter(isOpenItemActive).length,
       lowConfidenceCount,
       daysUntilDeadline: daysLeft,
     };

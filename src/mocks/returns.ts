@@ -249,6 +249,13 @@ const REYES_2024: Return = {
 export const SEED_TODAY = new Date("2026-08-08T00:00:00");
 
 /**
+ * The id of the open "upload your 1098" Request on the Nguyen Return — the
+ * Client-owned Open Item a collaboration Thread anchors to (#19). Shared so the
+ * Thread seed in `@/mocks/collaboration` references the same id, not a copy.
+ */
+export const NGUYEN_1098_REQUEST_ID = "rtn-nguyen-2024-req-1098";
+
+/**
  * A compact spec for a roster Return. REYES_2024 is the hand-authored showcase
  * (full Provenance, real corrections); the rest of the roster exists to give the
  * dashboard a realistic, legible volume of Returns to rank, so `makeReturn` builds
@@ -266,6 +273,12 @@ type ReturnSpec = {
   clientBlockers?: string[];
   /** Preparer-owned Open Items — actions the Preparer still owns. */
   preparerItems?: string[];
+  /**
+   * Fully-specified Open Items, when a Return needs stable ids, urgency, or a
+   * Closed resolution (the collaboration seed's lifecycle Requests, #19). Takes
+   * precedence over `clientBlockers` / `preparerItems`.
+   */
+  openItems?: OpenItem[];
 };
 
 /** Source Documents a generated low-Confidence Field can trace back to. */
@@ -291,7 +304,7 @@ const LOW_CONFIDENCE_POOL = [
 ] as const;
 
 function makeReturn(spec: ReturnSpec): Return {
-  const openItems: OpenItem[] = [
+  const openItems: OpenItem[] = spec.openItems ?? [
     ...(spec.clientBlockers ?? []).map((label, i) => ({
       id: `${spec.id}-client-${i}`,
       label,
@@ -383,7 +396,10 @@ function makeReturn(spec: ReturnSpec): Return {
  * (all relative to SEED_TODAY, 2026-08-08).
  */
 const ROSTER: Return[] = [
-  // Needs you now — overdue.
+  // Needs you now — overdue. Also the collaboration showcase (#19): its Open
+  // Items span the Request lifecycle (open → flipped-to-preparer → closed) and
+  // its Threads live in `@/mocks/collaboration`. `NGUYEN_1098_REQUEST_ID` is the
+  // open Request a Thread anchors to.
   makeReturn({
     id: "rtn-nguyen-2024",
     client: "Nguyen Family",
@@ -391,8 +407,34 @@ const ROSTER: Return[] = [
     stage: "in-review",
     deadline: "2026-07-30",
     lowConfidence: 2,
-    clientBlockers: ["Waiting on the client's corrected 1099-INT"],
-    preparerItems: ["Reconcile interest across both 1099-INTs"],
+    openItems: [
+      // Open Requests (client owns the next action), ordered by urgency in the panel.
+      {
+        id: NGUYEN_1098_REQUEST_ID,
+        label: "Upload your 2024 Form 1098 (mortgage interest)",
+        owner: "client",
+        urgency: "high",
+      },
+      {
+        id: "rtn-nguyen-2024-req-bank",
+        label: "Confirm your bank details for direct deposit",
+        owner: "client",
+        urgency: "normal",
+      },
+      // Client acted (signed) → flipped to the Preparer to verify; not yet closed.
+      {
+        id: "rtn-nguyen-2024-verify-8879",
+        label: "Verify the signed 8879 e-file authorization the client uploaded",
+        owner: "preparer",
+      },
+      // Client provided the corrected 1099-INT; the Preparer verified and closed it.
+      {
+        id: "rtn-nguyen-2024-closed-1099int",
+        label: "Corrected 1099-INT",
+        owner: "preparer",
+        resolution: "closed",
+      },
+    ],
   }),
   makeReturn({
     id: "rtn-okafor-2024",

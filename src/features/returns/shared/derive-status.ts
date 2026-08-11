@@ -1,5 +1,6 @@
 import { parseDeadline, DUE_SOON_DAYS } from "@/features/dashboard/ranking";
 import type { OpenItem, OpenItemOwner, Return, Stage } from "./returns";
+import { isOpenItemActive } from "./returns";
 
 // ─── Stage → step index ────────────────────────────────────────────────────
 
@@ -97,12 +98,13 @@ export function deriveReturnStatus(
     upcoming: true,
   });
 
-  // Open items grouped by owner.
+  // Open items grouped by owner. Closed Requests are resolved — they neither
+  // group here nor block below (ADR-0008).
   const openItemsByOwner: Record<OpenItemOwner, OpenItem[]> = {
     preparer: [],
     client: [],
   };
-  for (const item of taxReturn.openItems) {
+  for (const item of taxReturn.openItems.filter(isOpenItemActive)) {
     openItemsByOwner[item.owner].push(item);
   }
 
