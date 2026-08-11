@@ -135,8 +135,8 @@ export type Return = {
    * `id`, e.g. "RET-2024-011". What a preparer would quote on the phone.
    */
   returnNumber: string;
-  /** The preparer who owns the Return, shown in the header, e.g. "Jordan Avery". */
-  owner: string;
+  /** The preparer's display name, shown in the header, e.g. "Jordan Avery". */
+  ownerName: string;
   taxYear: number;
   stage: Stage;
   /**

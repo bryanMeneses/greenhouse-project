@@ -3,6 +3,8 @@ import { describe, it, expect } from "vitest";
 import {
   isMessageVisibleTo,
   visibleMessages,
+  threadAudience,
+  threadHasAudience,
   composableAudiences,
   defaultComposeAudience,
   isRequest,
@@ -80,6 +82,21 @@ describe("visibleMessages", () => {
   it("keeps everything for the firm", () => {
     const t = thread([clientMsg, internalNote]);
     expect(visibleMessages(t, "firm")).toHaveLength(2);
+  });
+});
+
+describe("thread audience", () => {
+  it("treats a mixed thread as client-visible", () => {
+    const mixed = thread([internalNote, clientMsg]);
+    expect(threadAudience(mixed)).toBe("client-visible");
+    expect(threadHasAudience(mixed, "internal")).toBe(true);
+    expect(threadHasAudience(mixed, "client-visible")).toBe(true);
+  });
+
+  it("treats a thread with only internal notes as internal", () => {
+    const internal = thread([internalNote]);
+    expect(threadAudience(internal)).toBe("internal");
+    expect(threadHasAudience(internal, "client-visible")).toBe(false);
   });
 });
 

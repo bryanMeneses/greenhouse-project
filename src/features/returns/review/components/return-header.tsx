@@ -6,7 +6,7 @@ import type { Return } from "@/features/returns/shared/returns";
 
 type ReturnHeaderProps = {
   taxReturn: Return;
-  /** Open thread + request count, badged on the Messages action. */
+  /** Open request count, badged on the Messages action. */
   messageCount?: number;
   /** Jump to the Collaboration tab. */
   onOpenMessages?: () => void;
@@ -43,7 +43,7 @@ export function ReturnHeader({
         </h1>
         <p className="text-sm text-muted-foreground">
           {taxReturn.returnType} · Tax year {taxReturn.taxYear} · Owned by{" "}
-          {taxReturn.owner}
+          {taxReturn.ownerName}
         </p>
       </div>
 

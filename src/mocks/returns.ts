@@ -16,7 +16,7 @@ const REYES_2024: Return = {
   client: "Reyes Household",
   returnType: "Individual 1040",
   returnNumber: "RET-2024-007",
-  owner: "Jordan Avery",
+  ownerName: "Jordan Avery",
   taxYear: 2024,
   stage: "in-review",
   deadline: "2026-09-15",
@@ -274,8 +274,8 @@ type ReturnSpec = {
   returnType?: string;
   /** Human-facing Return id; defaults to one derived from the id + tax year. */
   returnNumber?: string;
-  /** Owning preparer; defaults to "Jordan Avery". */
-  owner?: string;
+  /** Owning preparer's display name; defaults to "Jordan Avery". */
+  ownerName?: string;
   /** How many low-Confidence Fields are still awaiting review. */
   lowConfidence: number;
   /** Client-owned Open Items — each one makes the Return blocked on the Client. */
@@ -388,7 +388,7 @@ function makeReturn(spec: ReturnSpec): Return {
     returnNumber:
       spec.returnNumber ??
       `RET-${spec.taxYear}-${(spec.id.replace(/\D/g, "").slice(-3) || "000").padStart(3, "0")}`,
-    owner: spec.owner ?? "Jordan Avery",
+    ownerName: spec.ownerName ?? "Jordan Avery",
     taxYear: spec.taxYear,
     stage: spec.stage,
     deadline: spec.deadline,

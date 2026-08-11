@@ -10,7 +10,7 @@ import type {
   Thread as ThreadModel,
   Viewer,
 } from "./collaboration";
-import { visibleMessages } from "./collaboration";
+import { threadHasAudience } from "./collaboration";
 import { ThreadList, ThreadDetail, EmptyConversation } from "./thread";
 import { RequestsActivityPanel } from "./requests-activity-panel";
 
@@ -74,10 +74,10 @@ export function CollaborationSection({
   // the Firm sees them all. Both drive the same master–detail inbox.
   const displayThreads = isFirm
     ? threads
-    : threads.filter((t) => visibleMessages(t, viewerFamily).length > 0);
+    : threads.filter((t) => threadHasAudience(t, "client-visible"));
 
   // The Client shows nothing when there's no conversation to read; the Firm keeps
-  // the box (with its empty state) so the "start a conversation" affordance stays.
+  // the box (with its empty state) so the workspace remains structurally stable.
   if (!isFirm && displayThreads.length === 0) return null;
 
   const selected =
@@ -90,7 +90,7 @@ export function CollaborationSection({
           side by side on wide screens, the inbox stacking on top when it collapses
           to a single column. On wide screens the box is a fixed frame, so the inbox
           and the conversation each scroll within it rather than growing the page. */}
-      <div className="grid divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:h-[34rem] lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
+      <div className="grid divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:h-[36.5rem] lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
         <ThreadList
           embedded
           threads={displayThreads}

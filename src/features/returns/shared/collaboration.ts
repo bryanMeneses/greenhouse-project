@@ -93,6 +93,21 @@ export function visibleMessages(thread: Thread, family: RoleFamily): Message[] {
   return thread.messages.filter((m) => isMessageVisibleTo(m, family));
 }
 
+/** Whether a Thread contains at least one Message for the given audience. */
+export function threadHasAudience(
+  thread: Thread,
+  audience: MessageAudience,
+): boolean {
+  return thread.messages.some((message) => message.audience === audience);
+}
+
+/** A Thread is client-visible if any of its Messages cross the client boundary. */
+export function threadAudience(thread: Thread): MessageAudience {
+  return threadHasAudience(thread, "client-visible")
+    ? "client-visible"
+    : "internal";
+}
+
 /**
  * The compose audiences available to a Role family. The Preparer (firm) chooses
  * between Internal and Client-visible; a Client composes Client-visible only —

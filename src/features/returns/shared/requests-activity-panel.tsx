@@ -3,6 +3,7 @@ import { ClipboardList, MessagesSquare, AlertTriangle } from "lucide-react";
 
 import { formatShortDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { RoleFamily } from "@/lib/roles";
 import { roleConfig } from "@/lib/roles";
 import type { OpenItem, Return } from "./returns";
@@ -73,9 +74,21 @@ export function RequestsActivityPanel({
           <p className="text-sm text-muted-foreground">No open requests.</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {requests.map((request) => (
-              <RequestRow key={request.id} request={request} />
-            ))}
+            {requests.map((request) => {
+              const thread = threads.find(
+                (candidate) =>
+                  candidate.subject.kind === "open-item" &&
+                  candidate.subject.openItemId === request.id,
+              );
+              return (
+                <RequestRow
+                  key={request.id}
+                  request={request}
+                  threadId={thread?.id}
+                  onSelectThread={onSelectThread}
+                />
+              );
+            })}
           </ul>
         )}
       </div>
@@ -111,20 +124,59 @@ export function RequestsActivityPanel({
 
 // ─── Rows ────────────────────────────────────────────────────────────────────
 
-function RequestRow({ request }: { request: OpenItem }) {
+function RequestRow({
+  request,
+  threadId,
+  onSelectThread,
+}: {
+  request: OpenItem;
+  threadId?: string;
+  onSelectThread?: (threadId: string) => void;
+}) {
   const isUrgent = request.urgency === "high";
-  return (
-    <li className="flex items-start justify-between gap-3 rounded-md border border-border bg-background px-3 py-2">
-      <div className="flex min-w-0 flex-col gap-1">
+  const hasConversation = Boolean(threadId);
+  const content = (
+    <>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-sm">{request.label}</span>
         <span className="text-xs text-muted-foreground">Waiting on client</span>
       </div>
-      {isUrgent && (
-        <Badge className="shrink-0 gap-1 border-warning/30 bg-warning/15 text-warning">
-          <AlertTriangle aria-hidden="true" />
-          Urgent
+      <div className="flex shrink-0 flex-wrap justify-end gap-1">
+        {isUrgent && (
+          <Badge className="gap-1 border-warning/30 bg-warning/15 text-warning">
+            <AlertTriangle aria-hidden="true" />
+            Urgent
+          </Badge>
+        )}
+        <Badge
+          variant="outline"
+          className={hasConversation ? "text-primary" : "text-muted-foreground"}
+        >
+          <MessagesSquare aria-hidden="true" />
+          {hasConversation ? "In conversation" : "No conversation yet"}
         </Badge>
-      )}
+      </div>
+    </>
+  );
+
+  if (threadId && onSelectThread) {
+    return (
+      <li>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => onSelectThread(threadId)}
+          className="h-auto w-full min-w-0 items-start justify-start rounded-md border border-border bg-background px-3 py-2 text-left whitespace-normal hover:bg-accent"
+        >
+          {content}
+        </Button>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-start justify-between gap-3 rounded-md border border-border bg-background px-3 py-2">
+      {content}
     </li>
   );
 }

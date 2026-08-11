@@ -1,3 +1,4 @@
+import * as React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -90,6 +91,37 @@ function renderDetail(family: "firm" | "client") {
   );
 }
 
+function StatefulDetail({ family }: { family: "firm" | "client" }) {
+  const viewer = family === "firm" ? PREPARER : CLIENT;
+  const [thread, setThread] = React.useState(w2Thread);
+
+  return (
+    <ThreadDetail
+      thread={thread}
+      openItems={OPEN_ITEMS}
+      viewerFamily={family}
+      viewer={viewer}
+      onSend={(body, audience) =>
+        setThread((current) => ({
+          ...current,
+          messages: [
+            ...current.messages,
+            {
+              id: "m-new",
+              threadId: current.id,
+              authorRole: viewer.role,
+              authorName: viewer.name,
+              audience,
+              body,
+              sentAt: "2026-08-08T00:00:00.000Z",
+            },
+          ],
+        }))
+      }
+    />
+  );
+}
+
 describe("ThreadDetail — audience boundary", () => {
   it("shows the Preparer every message, including the Internal note", () => {
     renderDetail("firm");
@@ -121,6 +153,26 @@ describe("ThreadDetail — boundary notice + subject link", () => {
     expect(screen.getByText(/Client-visible thread\./)).toBeInTheDocument();
   });
 
+  it("labels an internal-only thread without implying client visibility", () => {
+    const internalOnly = w2Thread();
+    internalOnly.messages = [internalOnly.messages[2]];
+
+    render(
+      <ThreadDetail
+        thread={internalOnly}
+        openItems={OPEN_ITEMS}
+        viewerFamily="firm"
+        viewer={PREPARER}
+        onSend={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Internal thread\./)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Client-visible thread\./),
+    ).not.toBeInTheDocument();
+  });
+
   it("reassures the client that they see only shared messages", () => {
     renderDetail("client");
     expect(
@@ -132,6 +184,29 @@ describe("ThreadDetail — boundary notice + subject link", () => {
     renderDetail("firm");
     expect(screen.getByText(/Linked to W-2 \(Acme Corp\)/)).toBeInTheDocument();
   });
+});
+
+describe("ThreadDetail — message scrolling", () => {
+  it.each(["firm", "client"] as const)(
+    "scrolls to the newest message for the %s view",
+    async (family) => {
+      const user = userEvent.setup();
+      render(<StatefulDetail family={family} />);
+      const messageList = screen.getByRole("list");
+      Object.defineProperty(messageList, "scrollHeight", {
+        configurable: true,
+        value: 640,
+      });
+
+      await user.type(
+        screen.getByRole("textbox", { name: /write a message/i }),
+        "A new message.",
+      );
+      await user.click(screen.getByRole("button", { name: /send/i }));
+
+      expect(messageList.scrollTop).toBe(640);
+    },
+  );
 });
 
 describe("ThreadDetail — audience-aware compose", () => {

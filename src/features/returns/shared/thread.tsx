@@ -7,11 +7,11 @@ import {
   Eye,
   Send,
   Link2,
-  Plus,
   MessageSquarePlus,
 } from "lucide-react";
 
 import { cn, formatRelativeToSeed } from "@/lib/utils";
+import { SEED_TODAY } from "@/mocks/returns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,8 @@ import { roleConfig } from "@/lib/roles";
 import type { OpenItem } from "./returns";
 import {
   isMessageVisibleTo,
+  threadAudience,
+  threadHasAudience,
   composableAudiences,
   defaultComposeAudience,
   type Message,
@@ -105,13 +107,6 @@ function initials(name: string): string {
   return letters.toUpperCase() || "?";
 }
 
-/** A Thread's own audience: client-visible if any Message is, else internal. */
-function threadAudience(thread: ThreadModel): MessageAudience {
-  return thread.messages.some((m) => m.audience === "client-visible")
-    ? "client-visible"
-    : "internal";
-}
-
 // ─── Inbox list (firm) ───────────────────────────────────────────────────────
 
 /** The audience filter over the inbox — narrows the list, firm-only. */
@@ -128,9 +123,9 @@ function matchesFilter(thread: ThreadModel, filter: InboxFilter): boolean {
     case "all":
       return true;
     case "client-visible":
-      return thread.messages.some((m) => m.audience === "client-visible");
+      return threadHasAudience(thread, "client-visible");
     case "internal":
-      return thread.messages.some((m) => m.audience === "internal");
+      return threadHasAudience(thread, "internal");
   }
 }
 
@@ -142,8 +137,6 @@ type ThreadListProps = {
   viewerFamily: RoleFamily;
   selectedThreadId: string;
   onSelect: (threadId: string) => void;
-  /** Start a new conversation (UI-only affordance for now). */
-  onNewThread?: () => void;
   /** Drop the card chrome — this pane lives inside a shared master–detail box. */
   embedded?: boolean;
 };
@@ -163,7 +156,6 @@ export function ThreadList({
   viewerFamily,
   selectedThreadId,
   onSelect,
-  onNewThread,
   embedded = false,
 }: ThreadListProps) {
   const [filter, setFilter] = React.useState<InboxFilter>("all");
@@ -184,23 +176,13 @@ export function ThreadList({
       )}
     >
       <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <h3
             id={labelId}
             className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             Inbox
           </h3>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="-my-1 h-7 gap-1 px-2 text-xs"
-            onClick={onNewThread}
-          >
-            <Plus aria-hidden="true" className="size-3.5" />
-            New
-          </Button>
         </div>
         {isFirm && (
           <ToggleGroup
@@ -266,7 +248,9 @@ function ThreadRow({
   const visible = thread.messages.filter((m) =>
     isMessageVisibleTo(m, viewerFamily),
   );
-  const latest = visible[visible.length - 1] ?? thread.messages[0];
+  const latest = visible[visible.length - 1];
+  if (!latest) return null;
+
   const audience = AUDIENCE_CONFIG[threadAudience(thread)];
   const AudienceIcon = audience.icon;
 
@@ -293,7 +277,8 @@ function ThreadRow({
           </p>
           <div className="flex items-center gap-2">
             <span className="truncate text-xs text-muted-foreground">
-              {latest.authorName} · {formatRelativeToSeed(latest.sentAt)}
+              {latest.authorName} ·{" "}
+              {formatRelativeToSeed(latest.sentAt, SEED_TODAY)}
             </span>
             {isFirm && (
               <Badge
@@ -350,6 +335,12 @@ export function ThreadDetail({
   const visible = thread.messages.filter((m) =>
     isMessageVisibleTo(m, viewerFamily),
   );
+  const messageListRef = React.useRef<HTMLUListElement>(null);
+
+  React.useLayoutEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) messageList.scrollTop = messageList.scrollHeight;
+  }, [thread.id, visible.length]);
 
   return (
     <section
@@ -376,9 +367,12 @@ export function ThreadDetail({
         </p>
       </div>
 
-      <ThreadNotice isFirm={isFirm} />
+      <ThreadNotice isFirm={isFirm} audience={threadAudience(thread)} />
 
-      <ul className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+      <ul
+        ref={messageListRef}
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+      >
         {visible.map((message) => (
           <MessageBubble
             key={message.id}
@@ -396,13 +390,8 @@ export function ThreadDetail({
 
 /**
  * The detail pane's empty state — shown when a Return has no conversations yet.
- * Invites the Preparer to start the first thread (UI-only affordance for now).
  */
-export function EmptyConversation({
-  onNewThread,
-}: {
-  onNewThread?: () => void;
-}) {
+export function EmptyConversation() {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-12 text-center">
       <MessageSquarePlus
@@ -416,10 +405,6 @@ export function EmptyConversation({
           — every message stays attached to the work it belongs to.
         </p>
       </div>
-      <Button type="button" size="sm" onClick={onNewThread}>
-        <Plus aria-hidden="true" />
-        New conversation
-      </Button>
     </div>
   );
 }
@@ -429,20 +414,29 @@ export function EmptyConversation({
  * this conversation. For the firm it names the two audiences; for the client it
  * reassures that only shared messages appear.
  */
-function ThreadNotice({ isFirm }: { isFirm: boolean }) {
+function ThreadNotice({
+  isFirm,
+  audience,
+}: {
+  isFirm: boolean;
+  audience: MessageAudience;
+}) {
   if (isFirm) {
+    const isClientVisible = audience === "client-visible";
+    const NoticeIcon = isClientVisible ? Eye : Lock;
     return (
       <div className="mx-5 mt-4 flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-        <Eye
+        <NoticeIcon
           aria-hidden="true"
           className="mt-0.5 size-3.5 shrink-0 text-primary"
         />
         <p>
           <span className="font-medium text-foreground">
-            Client-visible thread.
+            {isClientVisible ? "Client-visible thread." : "Internal thread."}
           </span>{" "}
-          The client sees messages you mark client-visible. Internal notes stay
-          firm-only.
+          {isClientVisible
+            ? "The client sees messages you mark client-visible. Internal notes stay firm-only."
+            : "No messages in this thread are visible to the client. Internal notes stay firm-only."}
         </p>
       </div>
     );
@@ -503,7 +497,7 @@ function MessageBubble({
             dateTime={message.sentAt}
             className="text-xs text-muted-foreground tabular-nums"
           >
-            {formatRelativeToSeed(message.sentAt)}
+            {formatRelativeToSeed(message.sentAt, SEED_TODAY)}
           </time>
         </div>
         <div

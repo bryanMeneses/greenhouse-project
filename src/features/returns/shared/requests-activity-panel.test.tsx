@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
 import { RequestsActivityPanel } from "./requests-activity-panel";
@@ -12,7 +13,7 @@ function makeReturn(openItems: OpenItem[]): Return {
     client: "Nguyen Family",
     returnType: "Individual 1040",
     returnNumber: "RET-2024-011",
-    owner: "Jordan Avery",
+    ownerName: "Jordan Avery",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-09-15",
@@ -67,6 +68,12 @@ const THREADS: Thread[] = [
   },
 ];
 
+const REQUEST_THREAD: Thread = {
+  ...THREADS[0],
+  id: "t-request",
+  subject: { kind: "open-item", openItemId: "r-high" },
+};
+
 describe("RequestsActivityPanel — requests lead, by urgency", () => {
   it("lists only open client Requests, urgent first", () => {
     render(
@@ -89,6 +96,25 @@ describe("RequestsActivityPanel — requests lead, by urgency", () => {
     );
     expect(requestOrder[0]).toContain("1098"); // high urgency first
     expect(requestOrder[1]).toContain("bank details");
+  });
+
+  it("marks whether each request has a conversation and links existing ones", async () => {
+    const user = userEvent.setup();
+    const onSelectThread = vi.fn();
+    render(
+      <RequestsActivityPanel
+        taxReturn={makeReturn(OPEN_ITEMS)}
+        threads={[REQUEST_THREAD]}
+        viewerFamily="firm"
+        onSelectThread={onSelectThread}
+      />,
+    );
+
+    expect(screen.getByText("In conversation")).toBeInTheDocument();
+    expect(screen.getByText("No conversation yet")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Upload your 1098/ }));
+    expect(onSelectThread).toHaveBeenCalledWith("t-request");
   });
 
   it("shows an empty state when there are no open requests", () => {

@@ -57,6 +57,17 @@ describe("ReturnReviewPage — header + tab shell", () => {
     expect(overview).toHaveAttribute("aria-selected", "false");
   });
 
+  it("uses the open request count for Collaboration badges", () => {
+    renderPage();
+
+    expect(
+      screen.getByRole("tab", { name: /Collaboration/ }),
+    ).toHaveTextContent("2");
+    expect(screen.getByRole("button", { name: /Messages/ })).toHaveTextContent(
+      "2",
+    );
+  });
+
   it("jumps to Collaboration from the header's Messages action", async () => {
     const user = userEvent.setup();
     renderPage();
