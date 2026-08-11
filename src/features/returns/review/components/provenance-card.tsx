@@ -89,14 +89,17 @@ export function ProvenanceCard({
           opener?.focus();
         }}
         className={cn(
-          "max-h-[90vh] gap-0 overflow-y-auto border-border bg-card p-0 text-card-foreground",
+          // overflow-y-auto alone makes the browser compute overflow-x as `auto`
+          // too (CSS spec: a non-visible axis forces the other to auto), so any
+          // sub-pixel horizontal overflow shows a phantom scrollbar. Pin x hidden.
+          "max-h-[90vh] gap-0 overflow-y-auto overflow-x-hidden border-border bg-card p-0 text-card-foreground",
           // The panel grows only where the document actually docks beside the
           // card (md+); below that it stacks, so the narrow width still fits.
           "transition-[max-width] ease-out duration-300 sm:max-w-md",
           isDocumentOpen && "md:max-w-3xl",
         )}
       >
-        <div className="flex flex-col md:flex-row md:items-stretch">
+        <div className="flex min-w-0 flex-col md:flex-row md:items-stretch">
           <div
             className={cn(
               "flex min-w-0 flex-col",
