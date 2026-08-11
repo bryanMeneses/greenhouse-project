@@ -2,7 +2,7 @@
 
 Reference copy of the ten product challenges from `AI_Engineer_Case_Study_Updated.pdf`
 (July 2026), so grills and specs don't need the original PDF. Source of truth for
-*which* challenges exist and what each evaluates; our scope/order decisions live in
+_which_ challenges exist and what each evaluates; our scope/order decisions live in
 `docs/adr/0004` and the domain language in `CONTEXT.md`.
 
 ## How the case study is graded (from the PDF)
@@ -12,33 +12,34 @@ Reference copy of the ten product challenges from `AI_Engineer_Case_Study_Update
 - **Behind the frontend, quick and dirty** — hardcoded data, mocked responses, faked
   logic are all ideal. No real infra, OCR, or AI.
 - **Simulate the AI** — fabricate plausible fake extraction, confidence scores,
-  recommendations, warnings. We're judged on how AI output is *presented*, not built.
+  recommendations, warnings. We're judged on how AI output is _presented_, not built.
 - **What good looks like** — a real (even rough) interface over static images; brief
   defensible decisions over polish; enough fake data + edge cases that it's testable;
   a short note on what's real vs. simulated.
 
 ## Overview
 
-| # | Challenge | In one line |
-|---|-----------|-------------|
-| 01 | Source Document Traceability | Trace every number on the return back to its source |
-| 02 | Client & CPA Collaboration | Unify fragmented communication around documents and issues |
-| 03 | Where to Start | A first-time user knows their next action within 10 seconds |
-| 04 | Getting Lost in the App | Navigation that preserves context across connected objects |
-| 05 | Role-Aware Experiences | One product, six roles, no confusion |
-| 06 | Return Status & Progress | Statuses everyone interprets the same way |
-| 07 | An Actionable Dashboard | Answer "what should I work on right now?" |
-| 08 | Clickable vs. Editable | A consistent system for interaction affordances |
-| 09 | Complexity Made Navigable | Deep professional work that stays approachable |
-| 10 | Trustworthy AI | Transparency that builds confidence without overload |
+| #   | Challenge                    | In one line                                                 |
+| --- | ---------------------------- | ----------------------------------------------------------- |
+| 01  | Source Document Traceability | Trace every number on the return back to its source         |
+| 02  | Client & CPA Collaboration   | Unify fragmented communication around documents and issues  |
+| 03  | Where to Start               | A first-time user knows their next action within 10 seconds |
+| 04  | Getting Lost in the App      | Navigation that preserves context across connected objects  |
+| 05  | Role-Aware Experiences       | One product, six roles, no confusion                        |
+| 06  | Return Status & Progress     | Statuses everyone interprets the same way                   |
+| 07  | An Actionable Dashboard      | Answer "what should I work on right now?"                   |
+| 08  | Clickable vs. Editable       | A consistent system for interaction affordances             |
+| 09  | Complexity Made Navigable    | Deep professional work that stays approachable              |
+| 10  | Trustworthy AI               | Transparency that builds confidence without overload        |
 
 Our build order (ADR-0004): `08 → 01 → 10 → 07 → 05 → 06 → 02 → 03 → 09 → 04`.
-Built: 01, 07, 08, 10.
+Built: 01, 05, 07, 08, 10.
 
 ---
 
 ## 01 · Source Document Traceability
-*Trace every number on the return back to its source.*
+
+_Trace every number on the return back to its source._
 
 **Challenge:** A CPA needs to trust every number. Without knowing where a figure came
 from, they either trust the software blindly or re-derive everything by hand.
@@ -54,7 +55,8 @@ traceability data linking them to fields. The interaction model is what's judged
 output feels.
 
 ## 02 · Client & CPA Collaboration
-*Unify fragmented communication around documents and issues.*
+
+_Unify fragmented communication around documents and issues._
 
 **Challenge:** Tax work is constant back-and-forth that scatters across email, calls,
 and disconnected tools. Design the collaboration layer for a platform that never has
@@ -73,7 +75,8 @@ messages with real working UI; no messaging backend.
 ownership.
 
 ## 03 · Where to Start
-*A first-time user knows their next action within 10 seconds.*
+
+_A first-time user knows their next action within 10 seconds._
 
 **Challenge:** A brand-new client logs in for the first time — no muscle memory,
 nothing to unlearn, just a blank product and a task. Design that first experience.
@@ -89,7 +92,8 @@ questionnaire items in various states, and build the real onboarding flow around
 **Evaluating:** First-run clarity, information hierarchy, reducing time-to-first-action.
 
 ## 04 · Getting Lost Between Parts of the App
-*Navigation that preserves context across connected objects.*
+
+_Navigation that preserves context across connected objects._
 
 **Challenge:** A client gets a question tied to a document; answering it means moving
 between messages, the document, a questionnaire, and a task list — without ever losing
@@ -108,7 +112,8 @@ end-to-end, not a real data model.
 workflow.
 
 ## 05 · Role-Aware Experiences
-*One product, six roles, no confusion.*
+
+_One product, six roles, no confusion._
 
 **Challenge:** The same platform serves individual taxpayers, business owners, tax
 preparers, reviewers, firm administrators, and seasonal staff. Each should feel built
@@ -126,7 +131,8 @@ real auth or permissions system.
 **Evaluating:** Role architecture, permission clarity, context-switching design.
 
 ## 06 · Return Status & Progress
-*Statuses everyone interprets the same way.*
+
+_Statuses everyone interprets the same way._
 
 **Challenge:** "In Progress," "Pending Review," "Open Items" mean different things to
 different people; clients and staff read them differently. Design status so it means the
@@ -143,7 +149,8 @@ to the client.
 **Evaluating:** Shared mental models, status legibility, appropriate detail by audience.
 
 ## 07 · An Actionable Dashboard
-*Answer "what should I work on right now?"*
+
+_Answer "what should I work on right now?"_
 
 **Challenge:** Dashboards are easy to make pretty and easy to make useless. Design the
 CPA-facing dashboard so staff actually use it instead of a spreadsheet.
@@ -160,7 +167,8 @@ ranks and filters is enough.
 **Evaluating:** Action-orientation, prioritization logic, dashboard information design.
 
 ## 08 · Clickable vs. Editable
-*A consistent system for interaction affordances.*
+
+_A consistent system for interaction affordances._
 
 **Challenge:** The platform shows AI-generated values, extracted data, calculations,
 reviewer comments, and client answers side by side — some editable, some needing
@@ -178,7 +186,8 @@ screens, not one component.
 contexts.
 
 ## 09 · Complexity Made Navigable
-*Deep professional work that stays approachable.*
+
+_Deep professional work that stays approachable._
 
 **Challenge:** A single return can involve hundreds of documents, questions,
 calculations, warnings, and messages. Hold all of that without overwhelming people or
@@ -196,7 +205,8 @@ reducing complexity — it's making it navigable.
 **Evaluating:** Progressive disclosure, information hierarchy, handling of scale.
 
 ## 10 · Trustworthy AI
-*Transparency that builds confidence without overload.*
+
+_Transparency that builds confidence without overload._
 
 **Challenge:** The platform leans on AI for recommendations, confidence scores,
 warnings, extracted values, and suggested corrections. Design the interaction model so

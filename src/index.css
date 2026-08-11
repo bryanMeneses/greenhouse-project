@@ -132,4 +132,10 @@
     @apply font-serif;
     text-wrap: balance;
   }
+
+  /* Every enabled button (native + shadcn/Radix, which render real <button>s)
+     gets a pointer cursor; disabled buttons keep the default arrow. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
