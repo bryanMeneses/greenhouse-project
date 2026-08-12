@@ -33,6 +33,9 @@ describe("ReturnReviewPage — header + tab shell", () => {
         /Individual 1040 · Tax year 2024 · Owned by Jordan Avery/,
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Return map" }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the return status band above the tabs", () => {

@@ -5,6 +5,7 @@ import { reviewQueue } from "@/features/returns/shared/review-queue";
 import { ReturnView } from "@/features/returns/review/components/return-view";
 import { ProvenanceCard } from "@/features/returns/review/components/provenance-card";
 import { ReviewQueuePanel } from "@/features/returns/review/components/review-queue-panel";
+import { ComplexityNavigator } from "@/features/returns/shared/complexity-navigator";
 
 type ReturnReviewProps = {
   return: Return;
@@ -74,7 +75,15 @@ export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* The Review Queue leads, full width and emphasized — the CPA's primary
+      {/* Challenge 09 leads with orientation and scale: the map keeps hundreds of
+          work items searchable while the existing queue remains the action surface. */}
+      <ComplexityNavigator
+        taxReturn={taxReturn}
+        viewerFamily="firm"
+        onInspectField={setInspectedFieldId}
+      />
+
+      {/* The Review Queue stays full width and emphasized — the CPA's primary
           job on the return. Income & Deductions share the space below it. */}
       <ReviewQueuePanel fields={queue} onReview={setInspectedFieldId} />
 

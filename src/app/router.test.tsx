@@ -141,6 +141,9 @@ describe("router", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Inbox" })).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", { name: "Your return at a glance" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(/Nothing needs your attention right now/i),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Requests & Activity/)).not.toBeInTheDocument();
