@@ -79,7 +79,7 @@ export function ReturnStatusPage() {
             onComplete={completeOnboarding}
           />
         )}
-        <ReturnStatus taxReturn={displayReturn} />
+        <ReturnStatus taxReturn={displayReturn} showComplexity={!isFirstRun} />
         {displayReturn && !isFirstRun && (
           <CollaborationSection
             taxReturn={displayReturn}

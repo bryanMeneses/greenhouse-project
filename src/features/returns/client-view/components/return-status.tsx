@@ -2,12 +2,15 @@ import type { Return } from "@/features/returns/shared/returns";
 import { SEED_TODAY } from "@/mocks/returns";
 import { deriveReturnStatus } from "@/features/returns/shared/derive-status";
 import { Tracker, BlockingCallout } from "@/features/returns/shared/tracker";
+import { ComplexityNavigator } from "@/features/returns/shared/complexity-navigator";
 
 // ─── Props ─────────────────────────────────────────────────────────────────
 
 type ReturnStatusProps = {
   /** The Return this client owns, or undefined if none is on file yet. */
   taxReturn?: Return;
+  /** First-run keeps the focus on onboarding; the map appears after setup. */
+  showComplexity?: boolean;
 };
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -20,7 +23,10 @@ type ReturnStatusProps = {
  * here; the client sees a plain "your preparer is handling it" instead, so
  * firm-internal complexity doesn't leak across the boundary.
  */
-export function ReturnStatus({ taxReturn }: ReturnStatusProps) {
+export function ReturnStatus({
+  taxReturn,
+  showComplexity = false,
+}: ReturnStatusProps) {
   if (!taxReturn) {
     return (
       <div className="mx-auto max-w-2xl">
@@ -73,6 +79,10 @@ export function ReturnStatus({ taxReturn }: ReturnStatusProps) {
           </p>
         )}
       </section>
+
+      {showComplexity && (
+        <ComplexityNavigator taxReturn={taxReturn} viewerFamily="client" />
+      )}
 
       {/* The firm side — summarized, never the preparer's internal task list. */}
       {blockedOnClient && (
