@@ -90,7 +90,7 @@ export function CollaborationSection({
           side by side on wide screens, the inbox stacking on top when it collapses
           to a single column. On wide screens the box is a fixed frame, so the inbox
           and the conversation each scroll within it rather than growing the page. */}
-      <div className="grid divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:h-[36.5rem] lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
+      <div className="grid divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:h-146 lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
         <ThreadList
           embedded
           threads={displayThreads}

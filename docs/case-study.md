@@ -33,7 +33,7 @@ _which_ challenges exist and what each evaluates; our scope/order decisions live
 | 10  | Trustworthy AI               | Transparency that builds confidence without overload        |
 
 Our build order (ADR-0004): `08 → 01 → 10 → 07 → 05 → 06 → 02 → 03 → 09 → 04`.
-Built: 01, 05, 06, 07, 08, 10.
+Built: 01, 05, 06, 07, 08, 10, 02.
 
 ---
 

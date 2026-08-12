@@ -106,9 +106,63 @@ describe("router", () => {
     expect(screen.getByText("Getting started")).toBeInTheDocument();
     expect(screen.getByText("In review")).toBeInTheDocument();
     expect(screen.getByText("Ready to file")).toBeInTheDocument();
+    // A new Client lands on the focused first-run checklist before collaboration
+    // is introduced; the shared status remains visible as orientation.
+    expect(
+      screen.getByRole("heading", { name: /Let's get your return started/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Upload Form 1098/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Requests & Activity/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /Needs you now/i }),
     ).not.toBeInTheDocument();
+    // Day-one navigation defers messaging: the sidebar hints at it as unlocking
+    // after setup rather than presenting it as somewhere to go now.
+    expect(screen.getByText(/After setup/i)).toBeInTheDocument();
+  });
+
+  it("reveals the full Client workspace after first-run actions are complete", async () => {
+    const user = userEvent.setup();
+    actingAs({ userId: "user-jordan", role: "individual-taxpayer" });
+    const view = renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: /Upload Form 1098/i }));
+    await user.click(screen.getByRole("button", { name: "Upload document" }));
+    await user.click(screen.getByRole("button", { name: /Confirm details/i }));
+    await user.click(screen.getByRole("button", { name: "Save answers" }));
+    await user.click(screen.getByRole("button", { name: /View your return/i }));
+
+    expect(
+      screen.queryByRole("heading", {
+        name: /Let's get your return started/i,
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Inbox" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Nothing needs your attention right now/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Requests & Activity/)).not.toBeInTheDocument();
+    // The first-run "after setup" nav hint drops away once setup is done.
+    expect(screen.queryByText(/After setup/i)).not.toBeInTheDocument();
+    // Onboarding completion is session-only so the prototype can be replayed;
+    // only the existing active-role preference remains in localStorage.
+    expect(
+      localStorage.getItem(
+        "greenhouse:client-onboarding-complete:user-jordan:rtn-nguyen-2024",
+      ),
+    ).toBeNull();
+    expect(localStorage.getItem("greenhouse:active-role")).toBe(
+      JSON.stringify({ userId: "user-jordan", role: "individual-taxpayer" }),
+    );
+
+    // A fresh mount (the browser-reload equivalent) starts onboarding again.
+    view.unmount();
+    renderAt("/");
+    expect(
+      screen.getByRole("heading", { name: /Let's get your return started/i }),
+    ).toBeInTheDocument();
   });
 
   it("gates the return review from a Client Role with an explicit state", () => {

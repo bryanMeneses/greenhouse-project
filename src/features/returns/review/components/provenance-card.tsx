@@ -3,6 +3,7 @@ import { FileText, Check, Pencil, Flag, Sparkles } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useDialogReturnFocus } from "@/hooks/use-dialog-return-focus";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   currentValue,
@@ -73,21 +74,14 @@ export function ProvenanceCard({
   );
   const isDocumentOpen = activeSource !== null;
 
-  // Radix hands focus back to <DialogTrigger> on close, but this card is opened
-  // imperatively — from a Field row or the Review Queue — so there is no trigger
-  // to return to. Capture the opener on the first render, before Radix moves
-  // focus into the panel, and return focus to it ourselves.
-  const [opener] = React.useState(
-    () => document.activeElement as HTMLElement | null,
-  );
+  // Opened imperatively — from a Field row or the Review Queue — so there is no
+  // <DialogTrigger> for Radix to return focus to; the shared hook restores it.
+  const returnFocus = useDialogReturnFocus();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          opener?.focus();
-        }}
+        {...returnFocus}
         className={cn(
           // overflow-y-auto alone makes the browser compute overflow-x as `auto`
           // too (CSS spec: a non-visible axis forces the other to auto), so any
