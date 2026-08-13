@@ -186,6 +186,46 @@ export function getSourceDocument(id: string): SourceDocument | undefined {
   return SOURCE_DOCUMENTS[id];
 }
 
+/**
+ * The uploaded-file view of a Source Document (challenge 04 Documents Area). No
+ * real files or storage exist — these fields are what a CDN-backed upload record
+ * would carry, derived deterministically from the document id so the seed stays
+ * stable. `cdnUrl` is the shape a real integration would serve the page from.
+ */
+export type SourceDocumentFile = {
+  fileName: string;
+  mimeType: string;
+  sizeLabel: string;
+  uploadedAt: string;
+  cdnUrl: string;
+  pageCount: number;
+};
+
+/** Deterministic fake upload metadata for a Source Document. */
+export function sourceDocumentFile(id: string): SourceDocumentFile | undefined {
+  const doc = SOURCE_DOCUMENTS[id];
+  if (!doc) return undefined;
+
+  // A stable hash of the id drives size and upload date, so the same document
+  // always reads the same way without a hand-maintained metadata table.
+  const hash = [...id].reduce(
+    (acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0,
+    7,
+  );
+  const sizeKb = 40 + (hash % 460);
+  const day = (hash % 27) + 1;
+  const pageCount = doc.pages.length;
+
+  return {
+    fileName: `${doc.title}.pdf`,
+    mimeType: "application/pdf",
+    sizeLabel: `${sizeKb} KB`,
+    uploadedAt: `2024-02-${String(day).padStart(2, "0")}`,
+    cdnUrl: `https://cdn.greenhousetax.example/documents/${id}.pdf`,
+    pageCount,
+  };
+}
+
 /** Resolve the printed line a Field source points at, for its label/amount and highlighting. */
 export function getSourceLine(
   documentId: string,

@@ -3,48 +3,40 @@ import { FileText, MessageCircle } from "lucide-react";
 
 import {
   AppShell,
-  NAV_ITEM_BASE,
+  disabledNavClassName,
   type NavItem,
+  type ReturnContext,
 } from "@/components/layout/app-shell";
-import { cn } from "@/lib/utils";
+import { SidebarMenuItem } from "@/components/ui/sidebar";
+import { CLIENT_AREAS } from "@/features/returns/shared/areas";
 
-/**
- * The Client (external) shell (ADR-0005): a simpler, task-focused chrome for a
- * taxpayer tracking their own Return. One of the two audience layouts; see
- * {@link import("./internal-layout").InternalLayout} for the Firm side.
- */
+// The Client has exactly one Return, so it is their standing destination — the
+// contextual "My Return" tier with its Areas nested, no separate global item.
+const CLIENT_NAV: NavItem[] = [];
 
-const CLIENT_NAV: NavItem[] = [{ label: "My Return", to: "/", icon: FileText }];
+const CLIENT_RETURN_CONTEXT: ReturnContext = {
+  label: "My Return",
+  basePath: "/",
+  icon: FileText,
+  areas: CLIENT_AREAS,
+};
 
-/**
- * During first-run setup, messaging with the preparer is deferred until the
- * Client has finished their first steps (challenge 03: hide what isn't relevant
- * yet). Shown as a disabled hint so a brand-new Client can see what unlocks next,
- * mirroring the Firm side's {@link import("./internal-layout").InternalLayout}
- * "Review Queue — Soon" hint. Once onboarding is done it drops away and real
- * collaboration appears in the Return itself.
- */
 function MessagesHint() {
   return (
-    <span
-      aria-disabled="true"
-      className={cn(
-        NAV_ITEM_BASE,
-        "cursor-not-allowed text-muted-foreground/50",
-      )}
-    >
-      <MessageCircle className="size-4 shrink-0" />
-      Messages
-      <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        After setup
+    <SidebarMenuItem>
+      <span aria-disabled="true" className={disabledNavClassName()}>
+        <MessageCircle aria-hidden="true" className="size-4 shrink-0" />
+        <span className="group-data-[collapsible=icon]:hidden">Messages</span>
+        <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase group-data-[collapsible=icon]:hidden">
+          After setup
+        </span>
       </span>
-    </span>
+    </SidebarMenuItem>
   );
 }
 
 type ClientLayoutProps = {
   title: string;
-  /** During first-run, defer secondary destinations until setup is done. */
   firstRun?: boolean;
   children: React.ReactNode;
 };
@@ -54,6 +46,8 @@ export function ClientLayout({ title, firstRun, children }: ClientLayoutProps) {
     <AppShell
       title={title}
       nav={CLIENT_NAV}
+      returnContext={CLIENT_RETURN_CONTEXT}
+      contextualNav={!firstRun}
       navExtra={firstRun ? <MessagesHint /> : undefined}
     >
       {children}

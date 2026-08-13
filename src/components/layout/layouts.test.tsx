@@ -53,19 +53,31 @@ describe("InternalLayout", () => {
     );
   });
 
-  it("keeps Dashboard current while drilled into a Return's review", () => {
+  it("marks the open Return current — not Dashboard — while drilled in", () => {
     renderAt(
       "/returns/rtn-reyes-2024",
-      <InternalLayout title="Reyes Household · 2024 Return">
+      <InternalLayout
+        title="Reyes Household · 2024 Return"
+        activeReturn={{
+          label: "Reyes Household · 2024",
+          basePath: "/returns/rtn-reyes-2024",
+        }}
+      >
         <p>content</p>
       </InternalLayout>,
     );
 
-    // The review is a drill-in from the dashboard, so Dashboard stays current.
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+    // Point 1 IA: the contextual tier owns "where you are", so Dashboard is no
+    // longer lit on a Return route — the open Return is the current destination,
+    // with its Areas nested beneath.
+    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute(
       "aria-current",
       "page",
     );
+    expect(
+      screen.getByRole("link", { name: "Reyes Household · 2024" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
   });
 
   it("shows Review Queue as a disabled hint, not a link", () => {
@@ -93,6 +105,26 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("has no accessibility violations with the contextual Area tier mounted", async () => {
+    // Rendering on a Return route mounts the nested SidebarMenuSub — the tier the
+    // dashboard route never exercises — so axe actually covers it.
+    const { container } = renderAt(
+      "/returns/rtn-reyes-2024",
+      <InternalLayout
+        title="Reyes Household · 2024 Return"
+        activeReturn={{
+          label: "Reyes Household · 2024",
+          basePath: "/returns/rtn-reyes-2024",
+        }}
+      >
+        <p>content</p>
+      </InternalLayout>,
+    );
+
+    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 });

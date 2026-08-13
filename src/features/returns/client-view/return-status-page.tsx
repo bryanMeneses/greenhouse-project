@@ -1,31 +1,31 @@
 import * as React from "react";
+import { useNavigate } from "react-router";
 
 import { ClientLayout } from "@/components/layout/client-layout";
 import { ClientOnboarding } from "@/features/returns/client-view/components/client-onboarding";
-import { ReturnStatus } from "@/features/returns/client-view/components/return-status";
-import { fulfillRequest } from "@/features/returns/shared/collaboration";
-import { CollaborationSection } from "@/features/returns/shared/collaboration-section";
+import {
+  fulfillRequest,
+  threadsVisibleTo,
+} from "@/features/returns/shared/collaboration";
+import { Trail } from "@/features/returns/shared/trail";
+import { ReturnHeader } from "@/features/returns/review/components/return-header";
 import type { ClientOnboardingItem } from "@/features/returns/client-view/onboarding";
+import { CLIENT_AREAS } from "@/features/returns/shared/areas";
+import { ReturnAreaBody } from "@/features/returns/shared/area-body";
+import { useReturnView } from "@/hooks/use-return-view";
 import { useRole } from "@/hooks/use-role";
 import { getReturn } from "@/mocks/returns";
 import { getClientOnboarding } from "@/mocks/onboarding";
+import { getThreadsForReturn } from "@/mocks/collaboration";
 
-/**
- * First-run completion is intentionally session-only so the prototype can be
- * replayed after a reload. The shared mock Return is never mutated.
- */
 function useOnboardingComplete(): [boolean, () => void] {
   const [complete, setComplete] = React.useState(false);
-
   return [complete, () => setComplete(true)];
 }
 
-/**
- * The Client arm of `/` (ADR-0005): the client's own Return, in the client shell.
- * A thin page that loads this User's Return and drops the read-only status view
- * into the layout. Mirrors {@link import("@/features/dashboard/dashboard-page").DashboardPage}.
- */
+/** The Client arm of `/`, with the same Return Areas and URL-owned Trail as Firm. */
 export function ReturnStatusPage() {
+  const navigate = useNavigate();
   const { user, role, roleConfig } = useRole();
   const taxReturn = user.clientReturnId
     ? getReturn(user.clientReturnId)
@@ -35,7 +35,10 @@ export function ReturnStatusPage() {
   const [fulfilledRequestIds, setFulfilledRequestIds] = React.useState<
     string[]
   >([]);
-  // Request fulfillment is also session-only; the mock Preparer data is never mutated.
+  const { area, setView } = useReturnView({
+    areas: CLIENT_AREAS.map((candidate) => candidate.id),
+  });
+
   const completedOnboardingRequestIds = new Set(
     onboardingComplete
       ? (onboarding?.items ?? [])
@@ -69,9 +72,34 @@ export function ReturnStatusPage() {
     }
   }
 
+  const openMessages = () => {
+    setView({ area: "messages", focus: null });
+  };
+
+  // Filter to what this viewer's Role family may see before any Thread reaches a
+  // surface or the audience-neutral Connections resolver — the client boundary.
+  const threads = displayReturn
+    ? threadsVisibleTo(getThreadsForReturn(displayReturn.id), roleConfig.family)
+    : [];
+
   return (
     <ClientLayout title="Your return" firstRun={isFirstRun}>
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
+        {displayReturn && (
+          <>
+            <ReturnHeader
+              taxReturn={displayReturn}
+              messageCount={0}
+              onOpenMessages={openMessages}
+              onBack={() => navigate(-1)}
+            />
+            <Trail
+              taxReturn={displayReturn}
+              viewerFamily={roleConfig.family}
+              threads={threads}
+            />
+          </>
+        )}
         {isFirstRun && onboarding && (
           <ClientOnboarding
             seed={onboarding}
@@ -79,12 +107,18 @@ export function ReturnStatusPage() {
             onComplete={completeOnboarding}
           />
         )}
-        <ReturnStatus taxReturn={displayReturn} showComplexity={!isFirstRun} />
-        {displayReturn && !isFirstRun && (
-          <CollaborationSection
+        {/* The active Area's single composed surface. During first-run only
+            Overview is shown (the full contextual tier is hidden until setup is
+            done); after that every Area renders its body. */}
+        {displayReturn && (area === "overview" || !isFirstRun) && (
+          <ReturnAreaBody
+            area={area}
             taxReturn={displayReturn}
+            seedReturn={taxReturn}
             viewerFamily={roleConfig.family}
+            threads={threads}
             viewer={{ role, name: user.name }}
+            showComplexity={!isFirstRun}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
@@ -44,11 +44,23 @@ describe("router", () => {
     expect(
       screen.getByRole("region", { name: "Review Queue" }),
     ).toBeInTheDocument();
-    // The sidebar keeps Dashboard current while drilled into a Return.
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    // Point 1 IA: the open Return — not Dashboard — is the current destination
+    // once you've drilled in, and its Areas fill the contextual tier. (The
+    // breadcrumb also carries a Dashboard crumb, so scope to the primary nav.)
+    expect(
+      within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
+        "link",
+        { name: "Dashboard" },
+      ),
+    ).not.toHaveAttribute("aria-current", "page");
+    // The sidebar's Return link is the current destination; the breadcrumb also
+    // carries a matching "Reyes Household · 2024" crumb, so scope to the primary nav.
+    expect(
+      within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
+        "link",
+        { name: "Reyes Household · 2024" },
+      ),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   it("navigates from a dashboard row to that Return and back", async () => {
@@ -64,7 +76,13 @@ describe("router", () => {
       }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("link", { name: /Back to dashboard/i }));
+    // The Return breadcrumb's top-most crumb is the way back to Dashboard.
+    await user.click(
+      within(screen.getByRole("navigation", { name: "Trail" })).getByRole(
+        "link",
+        { name: "Dashboard" },
+      ),
+    );
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Dashboard" }),
@@ -78,7 +96,7 @@ describe("router", () => {
       screen.getByRole("heading", { level: 1, name: "Return not found" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Back to dashboard/i }),
+      screen.getByRole("link", { name: /Go to home/i }),
     ).toBeInTheDocument();
   });
 
@@ -139,7 +157,9 @@ describe("router", () => {
         name: /Let's get your return started/i,
       }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Inbox" })).toBeInTheDocument();
+    // The contextual tier, hidden during first-run, is now revealed — Messages is
+    // its own Area (not bolted onto Overview), and Overview shows the return map.
+    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Your return at a glance" }),
     ).toBeInTheDocument();

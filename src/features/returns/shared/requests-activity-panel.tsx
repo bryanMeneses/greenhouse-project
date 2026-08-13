@@ -13,6 +13,8 @@ import {
   type Message,
   type Thread,
 } from "./collaboration";
+import { connectionsFor, type Connection } from "./connections";
+import { ConnectionLink } from "./connection-link";
 
 type RequestsActivityPanelProps = {
   taxReturn: Return;
@@ -85,6 +87,12 @@ export function RequestsActivityPanel({
                   key={request.id}
                   request={request}
                   threadId={thread?.id}
+                  connections={connectionsFor(
+                    { kind: "open-item", id: request.id },
+                    taxReturn,
+                    threads,
+                    viewerFamily,
+                  )}
                   onSelectThread={onSelectThread}
                 />
               );
@@ -127,10 +135,12 @@ export function RequestsActivityPanel({
 function RequestRow({
   request,
   threadId,
+  connections,
   onSelectThread,
 }: {
   request: OpenItem;
   threadId?: string;
+  connections: Connection[];
   onSelectThread?: (threadId: string) => void;
 }) {
   const isUrgent = request.urgency === "high";
@@ -159,6 +169,16 @@ function RequestRow({
     </>
   );
 
+  const connectionList = connections.length > 0 && (
+    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 px-3 text-xs">
+      {connections.map((connection) => (
+        <span key={connection.id}>
+          <ConnectionLink connection={connection} />
+        </span>
+      ))}
+    </div>
+  );
+
   if (threadId && onSelectThread) {
     return (
       <li>
@@ -170,13 +190,15 @@ function RequestRow({
         >
           {content}
         </Button>
+        {connectionList}
       </li>
     );
   }
 
   return (
-    <li className="flex items-start justify-between gap-3 rounded-md border border-border bg-background px-3 py-2">
-      {content}
+    <li className="rounded-md border border-border bg-background px-3 py-2">
+      <div className="flex items-start justify-between gap-3">{content}</div>
+      {connectionList}
     </li>
   );
 }

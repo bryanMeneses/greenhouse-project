@@ -1,5 +1,7 @@
 import * as React from "react";
+import { MessageSquarePlus, MessagesSquare } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { RoleFamily } from "@/lib/roles";
 import { getThreadsForReturn } from "@/mocks/collaboration";
 import { SEED_TODAY } from "@/mocks/returns";
@@ -12,7 +14,8 @@ import type {
 } from "./collaboration";
 import { threadHasAudience } from "./collaboration";
 import { ThreadList, ThreadDetail, EmptyConversation } from "./thread";
-import { RequestsActivityPanel } from "./requests-activity-panel";
+import { connectionsFor } from "./connections";
+import { useReturnView } from "@/hooks/use-return-view";
 
 type CollaborationSectionProps = {
   taxReturn: Return;
@@ -24,11 +27,10 @@ type CollaborationSectionProps = {
 
 /**
  * The collaboration slice mounted on a Return workspace (challenge 02), shared by
- * the Preparer review and the Client view via the 05 role switch. The firm sees a
- * master–detail inbox: Requests & Activity and a selectable thread list on the
- * left, the open conversation on the right. The client sees the same threads as a
- * single narrow column of chat, audience-filtered (no Internal notes) and without
- * the firm's panel or inbox. Optimistic sends live here so a message survives
+ * the Preparer review and the Client view via the 05 role switch. Both see the
+ * same master–detail inbox: a selectable thread list on the left, the open
+ * conversation on the right. Requests & Activity is its own Area,
+ * not bolted onto Messages here. Optimistic sends live here so a message survives
  * switching between threads; they're stamped against SEED_TODAY, never the wall
  * clock, so ordering stays fixed.
  */
@@ -45,6 +47,7 @@ export function CollaborationSection({
   const [selectedThreadId, setSelectedThreadId] = React.useState(
     seed[0]?.id ?? "",
   );
+  const { focus, setFocus } = useReturnView();
   const localCount = React.useRef(0);
 
   const send = (threadId: string, body: string, audience: MessageAudience) => {
@@ -80,12 +83,50 @@ export function CollaborationSection({
   // the box (with its empty state) so the workspace remains structurally stable.
   if (!isFirm && displayThreads.length === 0) return null;
 
+  const focusedThread =
+    focus?.kind === "thread"
+      ? displayThreads.find((thread) => thread.id === focus.id)
+      : undefined;
   const selected =
+    focusedThread ??
     displayThreads.find((thread) => thread.id === selectedThreadId) ??
     displayThreads[0];
+  const selectedConnections = selected
+    ? connectionsFor(
+        { kind: "thread", id: selected.id },
+        taxReturn,
+        displayThreads,
+        viewerFamily,
+      )
+    : [];
 
   return (
     <section aria-label="Collaboration" className="flex flex-col gap-4">
+      <header className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <MessagesSquare aria-hidden="true" className="size-4" />
+            </span>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Collaboration
+            </p>
+          </div>
+          <h2 className="font-serif text-xl font-semibold tracking-tight">
+            Messages
+          </h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            {isFirm
+              ? "Questions and notes between you and your client, each attached to the work it belongs to."
+              : "Questions and updates from your preparer about this return."}
+          </p>
+        </div>
+        <Button type="button" size="sm" className="shrink-0">
+          <MessageSquarePlus aria-hidden="true" />
+          New conversation
+        </Button>
+      </header>
+
       {/* Inbox + open conversation share one box, the same for firm and client:
           side by side on wide screens, the inbox stacking on top when it collapses
           to a single column. On wide screens the box is a fixed frame, so the inbox
@@ -97,7 +138,10 @@ export function CollaborationSection({
           openItems={taxReturn.openItems}
           viewerFamily={viewerFamily}
           selectedThreadId={selected?.id ?? ""}
-          onSelect={setSelectedThreadId}
+          onSelect={(threadId) => {
+            setSelectedThreadId(threadId);
+            setFocus({ kind: "thread", id: threadId });
+          }}
         />
         {selected ? (
           <ThreadDetail
@@ -108,25 +152,12 @@ export function CollaborationSection({
             viewerFamily={viewerFamily}
             viewer={viewer}
             onSend={(body, audience) => send(selected.id, body, audience)}
+            connections={selectedConnections}
           />
         ) : (
           <EmptyConversation />
         )}
       </div>
-
-      {/* Requests & Activity is a firm aggregation surface — the client's own
-          requests already surface in their return-status view. Clicking a recent
-          message jumps to its thread in the box above. */}
-      {isFirm && (
-        <div className="lg:max-w-md">
-          <RequestsActivityPanel
-            taxReturn={taxReturn}
-            threads={threads}
-            viewerFamily={viewerFamily}
-            onSelectThread={setSelectedThreadId}
-          />
-        </div>
-      )}
     </section>
   );
 }

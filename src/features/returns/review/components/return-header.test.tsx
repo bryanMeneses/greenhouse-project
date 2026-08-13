@@ -18,6 +18,16 @@ describe("ReturnHeader", () => {
     expect(screen.getByText(/2024 INDIVIDUAL Return/i)).toBeInTheDocument();
   });
 
+  it("renders a general back button left of the identity when onBack is provided", async () => {
+    const user = userEvent.setup();
+    const onBack = vi.fn();
+    render(<ReturnHeader taxReturn={NGUYEN} onBack={onBack} />);
+
+    const back = screen.getByRole("button", { name: "Go back" });
+    await user.click(back);
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
   it("badges the Messages action with the open count and fires the callback", async () => {
     const user = userEvent.setup();
     const onOpenMessages = vi.fn();

@@ -1,19 +1,31 @@
+import * as React from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { axe } from "vitest-axe";
 
-import { ReturnReview } from "./return-review";
+import { ReturnReview, returnReducer } from "./return-review";
 import { getReturn } from "@/mocks/returns";
 
 const taxReturn = getReturn("rtn-reyes-2024")!;
 
-function renderInPage() {
-  return render(
+/** Owns the review working copy the way the real workspace does (#5), so edits stick. */
+function ReviewHarness() {
+  const [reviewed, dispatch] = React.useReducer(returnReducer, taxReturn);
+  return (
     <main>
       <h1>Return</h1>
-      <ReturnReview return={taxReturn} />
-    </main>,
+      <ReturnReview return={reviewed} onAction={dispatch} />
+    </main>
+  );
+}
+
+function renderInPage() {
+  return render(
+    <MemoryRouter>
+      <ReviewHarness />
+    </MemoryRouter>,
   );
 }
 
@@ -63,11 +75,14 @@ describe("ReturnReview — source traceability", () => {
       }),
     ).toBeInTheDocument();
 
-    // Escape returns to the Return: no dialog, focus back on the Field clicked.
-    // Radix restores focus in a deferred task, hence the wait.
+    // Escape returns to the Return: the card is gone and the Preparer's place —
+    // the same Field row, still reviewable — is intact. Where keyboard focus lands
+    // is left to the primitives (dialog focus-return vs. the URL-focus effect).
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await waitFor(() => expect(fieldButton).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(fieldButton).toBeInTheDocument();
   });
 
   it("has no accessibility violations while the Provenance card is open", async () => {
@@ -80,6 +95,71 @@ describe("ReturnReview — source traceability", () => {
 
     // Radix portals the dialog to the body, outside the render container.
     expect(await axe(document.body)).toHaveNoViolations();
+  });
+});
+
+describe("ReturnReview — map browse vs. inspect", () => {
+  it("selecting a Field in the Return map browses it in the pane — no Provenance dialog", async () => {
+    const user = userEvent.setup();
+    renderInPage();
+
+    const map = screen.getByRole("region", { name: "Return map" });
+    // The map opens on the first visible item (Wages).
+    expect(
+      within(map).getByRole("heading", { name: "Wages, tips, other comp" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(map).getByRole("button", { name: /Taxable interest/ }),
+    );
+
+    // Browsing: the detail pane switches to the clicked Field, and the modal
+    // never appears.
+    expect(
+      within(map).getByRole("heading", { name: "Taxable interest" }),
+    ).toBeInTheDocument();
+    expect(
+      within(map).queryByRole("heading", { name: "Wages, tips, other comp" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens the Provenance dialog from the map's explicit Open field evidence action", async () => {
+    const user = userEvent.setup();
+    renderInPage();
+
+    const map = screen.getByRole("region", { name: "Return map" });
+    await user.click(
+      within(map).getByRole("button", { name: /Open field evidence/ }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Wages, tips, other comp" }),
+    ).toBeInTheDocument();
+  });
+
+  it("closing Provenance returns the map to that Field, not the top of the list", async () => {
+    const user = userEvent.setup();
+    renderInPage();
+
+    const map = screen.getByRole("region", { name: "Return map" });
+    // Browse to a non-top Field, then inspect it explicitly.
+    await user.click(
+      within(map).getByRole("button", { name: /Taxable interest/ }),
+    );
+    await user.click(
+      within(map).getByRole("button", { name: /Open field evidence/ }),
+    );
+    const card = screen.getByRole("dialog", { name: "Taxable interest" });
+    expect(card).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Close" }));
+
+    // The pane still shows the inspected Field — no jump back to Wages.
+    expect(
+      within(map).getByRole("heading", { name: "Taxable interest" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 

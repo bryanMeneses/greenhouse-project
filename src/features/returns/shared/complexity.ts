@@ -1,4 +1,5 @@
 import type { RoleFamily } from "@/lib/roles";
+import type { ConnectionTarget } from "./connections";
 
 /** The kinds of work a Return can contain in the navigable review map. */
 export type ComplexityItemKind =
@@ -25,6 +26,12 @@ export type ComplexityItem = {
   status: ComplexityItemStatus;
   /** A real Field id opens the existing Provenance workflow. */
   fieldId?: string;
+  /**
+   * The navigable Connection target this item maps to, when it stands for a real
+   * Return object (Field, Source Document, Open Item, Thread). Carried here rather
+   * than reconstructed from `id`, so the id format can change without breaking nav.
+   */
+  connectionTarget?: ConnectionTarget;
   /** A real Source Document title keeps source-level detail concrete. */
   sourceDocument?: string;
   /** For a Source Document: the Field labels it feeds, shown in the detail pane. */

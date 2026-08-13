@@ -1,14 +1,18 @@
-import * as React from "react";
-
 import type { Field, Return } from "@/features/returns/shared/returns";
 import { reviewQueue } from "@/features/returns/shared/review-queue";
 import { ReturnView } from "@/features/returns/review/components/return-view";
 import { ProvenanceCard } from "@/features/returns/review/components/provenance-card";
 import { ReviewQueuePanel } from "@/features/returns/review/components/review-queue-panel";
 import { ComplexityNavigator } from "@/features/returns/shared/complexity-navigator";
+import { useReturnView } from "@/hooks/use-return-view";
+import { FIRM_AREAS } from "@/features/returns/shared/areas";
+import { getThreadsForReturn } from "@/mocks/collaboration";
+import { connectionsFor } from "@/features/returns/shared/connections";
 
 type ReturnReviewProps = {
   return: Return;
+  /** Review edits are owned by the workspace so they survive an Area switch (#5). */
+  onAction: (action: FieldAction) => void;
 };
 
 /**
@@ -16,7 +20,7 @@ type ReturnReviewProps = {
  * as-is; `edit` records a correction while the model keeps the AI's original;
  * `flag` sends it back for another look.
  */
-type FieldAction =
+export type FieldAction =
   | { type: "accept"; fieldId: string }
   | { type: "edit"; fieldId: string; value: number }
   | { type: "flag"; fieldId: string };
@@ -37,7 +41,8 @@ function applyAction(field: Field, action: FieldAction): Field {
 }
 
 /** Apply a Preparer's action to the one Field it targets, leaving the rest intact. */
-function returnReducer(state: Return, action: FieldAction): Return {
+// eslint-disable-next-line react-refresh/only-export-components
+export function returnReducer(state: Return, action: FieldAction): Return {
   return {
     ...state,
     sections: state.sections.map((section) => ({
@@ -58,20 +63,28 @@ function returnReducer(state: Return, action: FieldAction): Return {
  * the same live state, so a Field verified in the card updates everywhere at once.
  * Income and the Review Queue sit side by side on wide screens, stacking on narrow.
  */
-export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
-  const [taxReturn, dispatch] = React.useReducer(returnReducer, initialReturn);
-  const [inspectedFieldId, setInspectedFieldId] = React.useState<string | null>(
-    null,
-  );
-
+export function ReturnReview({
+  return: taxReturn,
+  onAction,
+}: ReturnReviewProps) {
+  const { focus, setFocus } = useReturnView({
+    areas: FIRM_AREAS.map((area) => area.id),
+  });
   const field =
-    inspectedFieldId === null
+    focus === null || focus.kind !== "field"
       ? undefined
       : taxReturn.sections
           .flatMap((section) => section.fields)
-          .find((f) => f.id === inspectedFieldId);
+          .find((candidate) => candidate.id === focus.id);
 
   const queue = reviewQueue(taxReturn);
+  const fieldConnections = field
+    ? connectionsFor(
+        { kind: "field", id: field.id },
+        taxReturn,
+        getThreadsForReturn(taxReturn.id),
+      )
+    : [];
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -80,22 +93,38 @@ export function ReturnReview({ return: initialReturn }: ReturnReviewProps) {
       <ComplexityNavigator
         taxReturn={taxReturn}
         viewerFamily="firm"
-        onInspectField={setInspectedFieldId}
+        onInspectField={(fieldId) =>
+          setFocus({ kind: "field", id: fieldId }, "overview")
+        }
       />
 
       {/* The Review Queue stays full width and emphasized — the CPA's primary
           job on the return. Income & Deductions share the space below it. */}
-      <ReviewQueuePanel fields={queue} onReview={setInspectedFieldId} />
+      <ReviewQueuePanel
+        fields={queue}
+        onReview={(fieldId) =>
+          setFocus({ kind: "field", id: fieldId }, "overview")
+        }
+      />
 
-      <ReturnView return={taxReturn} onInspectField={setInspectedFieldId} />
+      <ReturnView
+        return={taxReturn}
+        onInspectField={(fieldId) =>
+          setFocus({ kind: "field", id: fieldId }, "overview")
+        }
+      />
 
       {field && (
         <ProvenanceCard
           field={field}
-          onClose={() => setInspectedFieldId(null)}
-          onAccept={(id) => dispatch({ type: "accept", fieldId: id })}
-          onEdit={(id, value) => dispatch({ type: "edit", fieldId: id, value })}
-          onFlag={(id) => dispatch({ type: "flag", fieldId: id })}
+          // Opening the card is a deep link (a push, so Back closes it); closing
+          // must replace that entry instead of pushing, or Back would replay the
+          // open→close toggle forever.
+          onClose={() => setFocus(null, undefined, { replace: true })}
+          onAccept={(id) => onAction({ type: "accept", fieldId: id })}
+          onEdit={(id, value) => onAction({ type: "edit", fieldId: id, value })}
+          onFlag={(id) => onAction({ type: "flag", fieldId: id })}
+          connections={fieldConnections}
         />
       )}
     </div>

@@ -1,5 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as baseRender, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+
+// The panel renders Connection links (useReturnView), so a Router is always in
+// scope — the app provides one; here the tests do.
+const render = ((
+  ui: Parameters<typeof baseRender>[0],
+  options?: Parameters<typeof baseRender>[1],
+) =>
+  baseRender(ui, { wrapper: MemoryRouter, ...options })) as typeof baseRender;
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 

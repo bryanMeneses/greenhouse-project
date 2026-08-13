@@ -1,109 +1,211 @@
 import * as React from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { Sprout, type LucideIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { RoleSwitcher } from "@/components/layout/role-switcher";
+import { cn } from "@/lib/utils";
+import type { ReturnArea } from "@/features/returns/shared/areas";
 
-/**
- * The shared shell chrome (ADR-0005). Both audience layouts —
- * {@link import("./internal-layout").InternalLayout} and
- * {@link import("./client-layout").ClientLayout} — render this frame and only
- * differ in the nav manifest they pass, so the audience fork lives in the
- * layouts, not here.
- */
-
-/** Base nav-item layout, shared by the live link and any disabled placeholder. */
 export const NAV_ITEM_BASE =
-  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium";
+  "flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium";
 
-/** A navigable sidebar entry. */
+/** A global-tier destination — "the app", independent of any one Return. */
 export type NavItem = {
   label: string;
   to: string;
   icon: LucideIcon;
-  /** Stay the active item on `/returns/*` too — a Return review is a drill-in from it. */
-  activeOnReturns?: boolean;
 };
 
-/** Live link treatment; the active route gets the accented, filled look. */
-function navLinkClass(isActive: boolean) {
-  return cn(
-    NAV_ITEM_BASE,
-    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
-    isActive
-      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-      : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-  );
-}
+/**
+ * The open Return that owns the contextual tier. Its Areas nest beneath a header
+ * that links to the Return's Overview. Firm supplies this only on a Return route;
+ * the Client always has exactly one Return, so it is their standing "My Return".
+ */
+export type ReturnContext = {
+  /** Heading for the group — "Nguyen Family · 2024" (firm) or "My Return" (client). */
+  label: string;
+  /** The Return's route; every Area deep link hangs off it (`/returns/:id` or `/`). */
+  basePath: string;
+  icon: LucideIcon;
+  areas: ReturnArea[];
+};
 
 type AppShellProps = {
-  /** Heading shown in the content header. */
   title: string;
-  /** The audience's primary nav entries. */
   nav: NavItem[];
-  /** Extra sidebar content below the links, e.g. a firm-only "coming soon" hint. */
+  returnContext?: ReturnContext;
+  /** Hidden during Client first-run (ch. 03) until onboarding completes. */
+  contextualNav?: boolean;
   navExtra?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function AppShell({ title, nav, navExtra, children }: AppShellProps) {
+/** The shared two-tier shell frame used by the Firm and Client layouts. */
+export function AppShell({
+  title,
+  nav,
+  returnContext,
+  contextualNav = true,
+  navExtra,
+  children,
+}: AppShellProps) {
   return (
-    <div className="flex min-h-svh bg-background text-foreground">
-      <Sidebar nav={nav} navExtra={navExtra} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
-          <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+    <SidebarProvider>
+      <AppSidebar
+        nav={nav}
+        returnContext={contextualNav ? returnContext : undefined}
+        navExtra={navExtra}
+      />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight">
+            {title}
+          </h1>
           <RoleSwitcher />
         </header>
-        <main className="min-w-0 flex-1 p-6">{children}</main>
-      </div>
-    </div>
+        <div className="min-w-0 flex-1 p-6">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
-function Sidebar({
+function AppSidebar({
   nav,
+  returnContext,
   navExtra,
 }: {
   nav: NavItem[];
+  returnContext?: ReturnContext;
   navExtra?: React.ReactNode;
 }) {
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // The contextual tier only opens when we're actually viewing its Return, so the
+  // Areas never dangle beneath a Return the User has navigated away from.
+  const onReturn =
+    returnContext !== undefined && pathname === returnContext.basePath;
+  const areas = returnContext?.areas ?? [];
+  const requestedArea = searchParams.get("area");
+  const currentArea = areas.some((area) => area.id === requestedArea)
+    ? requestedArea
+    : (areas[0]?.id ?? "overview");
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-        <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Sprout className="size-4" />
-        </span>
-        <span className="font-serif text-base font-semibold text-sidebar-foreground">
-          Greenhouse Tax
-        </span>
-      </div>
-      <nav aria-label="Primary" className="flex flex-col gap-1 p-3">
-        {nav.map((item) => {
-          // A Return's review (`/returns/:id`) is a drill-in with no nav item of
-          // its own, so the item it drills in from stays active there too — not
-          // just on its own route — and the nav always shows where you are.
-          const isActive =
-            pathname === item.to ||
-            (!!item.activeOnReturns && pathname.startsWith("/returns"));
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={isActive ? "page" : undefined}
-              className={navLinkClass(isActive)}
-            >
-              <Icon className="size-4 shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
-        {navExtra}
-      </nav>
-    </aside>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-1 py-1">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Sprout aria-hidden="true" className="size-4" />
+          </span>
+          <span className="font-serif text-base font-semibold group-data-[collapsible=icon]:hidden">
+            Greenhouse Tax
+          </span>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <nav aria-label="Primary">
+              <SidebarMenu>
+                {/* Global tier — "the app". Active only on its own exact route, so
+                  no destination stays lit once you've drilled into a Return. */}
+                {nav.map((item) => {
+                  const isActive = pathname === item.to;
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.to}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.label}
+                      >
+                        <Link
+                          to={item.to}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <Icon aria-hidden="true" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+
+                {/* Contextual tier — the open Return and its Areas nested beneath. */}
+                {returnContext && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={onReturn}
+                      tooltip={returnContext.label}
+                    >
+                      <Link
+                        to={`${returnContext.basePath}?area=overview`}
+                        aria-current={onReturn ? "page" : undefined}
+                      >
+                        <returnContext.icon aria-hidden="true" />
+                        <span>{returnContext.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {onReturn && areas.length > 0 && (
+                      <SidebarMenuSub
+                        aria-label={`${returnContext.label} Areas`}
+                      >
+                        {areas.map((area) => {
+                          const areaIsActive = currentArea === area.id;
+                          return (
+                            <SidebarMenuSubItem key={area.id}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={areaIsActive}
+                              >
+                                <Link
+                                  to={`${returnContext.basePath}?area=${area.id}`}
+                                  aria-current={
+                                    areaIsActive ? "page" : undefined
+                                  }
+                                  title={area.description}
+                                >
+                                  <span>{area.label}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarMenuItem>
+                )}
+
+                {navExtra}
+              </SidebarMenu>
+            </nav>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function disabledNavClassName() {
+  return cn(NAV_ITEM_BASE, "cursor-not-allowed text-muted-foreground/50");
 }

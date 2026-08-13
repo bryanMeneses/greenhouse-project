@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render as baseRender, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+
+// ComplexityNavigator reads within-Return view state through useReturnView, so a
+// Router is always in scope — the app provides one; here the tests do.
+const render = ((
+  ui: Parameters<typeof baseRender>[0],
+  options?: Parameters<typeof baseRender>[1],
+) =>
+  baseRender(ui, { wrapper: MemoryRouter, ...options })) as typeof baseRender;
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
@@ -60,9 +69,7 @@ describe("ComplexityNavigator", () => {
 
     // The work-area list must keep its sibling areas after one is picked, so you
     // can move directly between areas instead of returning to "All work" first.
-    expect(
-      within(areas).getAllByRole("button").length,
-    ).toBeGreaterThan(2);
+    expect(within(areas).getAllByRole("button").length).toBeGreaterThan(2);
 
     // Clicking the active area again toggles it back off to "All work".
     const docsButton = within(areas).getByRole("button", {

@@ -20,6 +20,19 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn generates these files via the CLI, and the upstream sources still
+    // export variants/constants beside components, use `Math.random` in the
+    // sidebar Skeleton, and set state from a matchMedia effect in use-mobile.
+    // Keep them byte-for-byte from the CLI rather than hand-patching; relax the
+    // three strict rules here instead of silencing them with inline disables.
+    files: ["src/components/ui/**/*.{ts,tsx}", "src/hooks/use-mobile.ts"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
   // Must be last: turns off ESLint rules that conflict with Prettier.
   prettier,
 ]);

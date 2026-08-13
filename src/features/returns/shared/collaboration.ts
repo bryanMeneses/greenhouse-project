@@ -93,6 +93,23 @@ export function visibleMessages(thread: Thread, family: RoleFamily): Message[] {
   return thread.messages.filter((m) => isMessageVisibleTo(m, family));
 }
 
+/**
+ * The Threads a viewer of the given Role family may see at all — the thread-level
+ * companion to `isMessageVisibleTo`. A firm sees every Thread; a Client sees only
+ * Threads carrying at least one Client-visible Message. Callers filter their Thread
+ * set through this before handing it to a Client surface or the (audience-neutral)
+ * Connections resolver, so an internal-only Thread never reaches a Client Role.
+ */
+export function threadsVisibleTo(
+  threads: Thread[],
+  family: RoleFamily,
+): Thread[] {
+  return threads.filter(
+    (thread) =>
+      family === "firm" || threadHasAudience(thread, "client-visible"),
+  );
+}
+
 /** Whether a Thread contains at least one Message for the given audience. */
 export function threadHasAudience(
   thread: Thread,

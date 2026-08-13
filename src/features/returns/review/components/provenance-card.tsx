@@ -19,6 +19,8 @@ import { DocumentPane } from "@/features/returns/review/components/document-pane
 import { ConfidenceBand } from "@/features/returns/review/components/confidence-band";
 import { FieldStateBadge } from "@/features/returns/review/components/field-state-badge";
 import { CorrectionNote } from "@/features/returns/review/components/correction-note";
+import { ConnectionLink } from "@/features/returns/shared/connection-link";
+import type { Connection } from "@/features/returns/shared/connections";
 
 type ProvenanceCardProps = {
   field: Field;
@@ -29,6 +31,7 @@ type ProvenanceCardProps = {
   onEdit?: (fieldId: string, value: number) => void;
   /** Flag the Field for another look (→ needs approval). */
   onFlag?: (fieldId: string) => void;
+  connections?: Connection[];
 };
 
 /** Whether two contributions refer to the same document region. */
@@ -59,12 +62,18 @@ export function ProvenanceCard({
   onAccept,
   onEdit,
   onFlag,
+  connections = [],
 }: ProvenanceCardProps) {
   const derivation = deriveField(field);
   const isDerived = derivation.operation !== "identity";
   const documentCount = new Set(
     derivation.contributions.map((c) => c.documentId),
   ).size;
+  // Source-document Connections would just repeat the contribution rows below;
+  // what the card adds is the Thread(s) this evidence is discussed in.
+  const followableConnections = connections.filter(
+    (connection) => connection.target.kind !== "source-document",
+  );
 
   const value = currentValue(field);
   const isCorrected = field.correction !== undefined;
@@ -147,6 +156,24 @@ export function ProvenanceCard({
             </div>
 
             <div className="flex flex-col gap-3 p-5">
+              {/* The contribution rows below already present each Source Document
+                  (with its amount, page, snippet, and View in document) — the only
+                  Connection this list adds is the one the card can't show itself:
+                  the Thread(s) discussing the evidence. */}
+              {followableConnections.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Connected on this Return
+                  </p>
+                  <ul className="flex flex-col gap-1 text-xs">
+                    {followableConnections.map((connection) => (
+                      <li key={connection.id}>
+                        <ConnectionLink connection={connection} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <p className="text-xs font-medium text-muted-foreground">
                 {isDerived
                   ? `Combined from ${documentCount} Source Document${documentCount > 1 ? "s" : ""}`

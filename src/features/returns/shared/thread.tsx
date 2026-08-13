@@ -20,6 +20,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { RoleFamily } from "@/lib/roles";
 import { roleConfig } from "@/lib/roles";
 import type { OpenItem } from "./returns";
+import { ConnectionLink } from "./connection-link";
+import type { Connection } from "./connections";
 import {
   isMessageVisibleTo,
   threadAudience,
@@ -310,6 +312,7 @@ type ThreadDetailProps = {
   onSend: (body: string, audience: MessageAudience) => void;
   /** Drop the card chrome — this pane lives inside a shared master–detail box. */
   embedded?: boolean;
+  connections?: Connection[];
 };
 
 /**
@@ -327,6 +330,7 @@ export function ThreadDetail({
   viewer,
   onSend,
   embedded = false,
+  connections = [],
 }: ThreadDetailProps) {
   const headingId = React.useId();
   const subject = describeSubject(thread.subject, openItems);
@@ -357,7 +361,10 @@ export function ThreadDetail({
         </Badge>
         <h3
           id={headingId}
-          className="font-serif text-lg font-semibold tracking-tight"
+          tabIndex={-1}
+          data-return-focus={thread.id}
+          data-return-focus-kind="thread"
+          className="font-serif text-lg font-semibold tracking-tight outline-none"
         >
           {thread.title}
         </h3>
@@ -365,6 +372,15 @@ export function ThreadDetail({
           <Link2 aria-hidden="true" className="size-3 shrink-0" />
           Linked to {subject.detail}
         </p>
+        {connections.length > 0 && (
+          <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            {connections.map((connection) => (
+              <li key={connection.id}>
+                <ConnectionLink connection={connection} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <ThreadNotice isFirm={isFirm} audience={threadAudience(thread)} />

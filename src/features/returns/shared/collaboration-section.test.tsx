@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render as baseRender, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+
+// These surfaces read within-Return view state through useReturnView, so a Router
+// is always in scope — the app provides one; here the tests do.
+const render = ((
+  ui: Parameters<typeof baseRender>[0],
+  options?: Parameters<typeof baseRender>[1],
+) =>
+  baseRender(ui, { wrapper: MemoryRouter, ...options })) as typeof baseRender;
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 
@@ -11,7 +20,7 @@ const PREPARER = { role: "preparer" as const, name: "Jordan Avery" };
 const CLIENT = { role: "individual-taxpayer" as const, name: "Nguyen Family" };
 
 describe("CollaborationSection — firm two-pane inbox", () => {
-  it("shows the Requests & Activity panel, the inbox, and a detail pane", () => {
+  it("shows the inbox and a detail pane, without the Requests & Activity panel", () => {
     render(
       <CollaborationSection
         taxReturn={NGUYEN}
@@ -20,11 +29,29 @@ describe("CollaborationSection — firm two-pane inbox", () => {
       />,
     );
 
-    expect(screen.getByText(/Requests & Activity/)).toBeInTheDocument();
+    // Requests & Activity is its own Area, not bolted onto Messages.
+    expect(screen.queryByText(/Requests & Activity/)).toBeNull();
     expect(screen.getByRole("heading", { name: "Inbox" })).toBeInTheDocument();
     // The first thread opens by default in the detail pane.
     expect(
       screen.getByRole("heading", { name: /a quick check on Box 1/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers a primary New conversation action in the header", () => {
+    render(
+      <CollaborationSection
+        taxReturn={NGUYEN}
+        viewerFamily="firm"
+        viewer={PREPARER}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "New conversation" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Messages" }),
     ).toBeInTheDocument();
   });
 
@@ -39,7 +66,7 @@ describe("CollaborationSection — firm two-pane inbox", () => {
     );
 
     // Scope the click to the inbox — the thread's messages also surface as
-    // clickable rows in Recent Activity.
+    // clickable rows in Requests & Activity.
     const inbox = screen.getByRole("region", { name: "Inbox" });
     await user.click(
       within(inbox).getByRole("button", { name: /Requesting your Form 1098/ }),
@@ -66,7 +93,7 @@ describe("CollaborationSection — firm two-pane inbox", () => {
     );
     await user.click(screen.getByRole("button", { name: /send/i }));
 
-    // Appears in the detail pane (and echoes into Recent Activity).
+    // Appears in the detail pane (and echoes into Requests & Activity).
     expect(
       screen.getAllByText("Verified against the transcript.").length,
     ).toBeGreaterThan(0);

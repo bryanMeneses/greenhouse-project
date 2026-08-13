@@ -83,3 +83,19 @@ _Avoid_: visibility, privacy, scope, internal-flag
 **Request**:
 The client-facing framing of an Open Item whose owner is a Client Role — the firm asking the Client for a document, an answer, or a signature. Not a separate object: it _is_ an Open Item, named for its audience. "Who owns the next action" on a Thread is this Open Item's owner. Lifecycle: **Open** (owner: Client) → client acts (upload / answer / sign) → owner flips to Preparer → Preparer verifies and closes → **Closed**. Fulfillment is the _action_, not a reply; there is no auto-close on client action — the firm always verifies.
 _Avoid_: ask, task, todo, ticket
+
+**Connection**:
+A navigable relationship between two objects on a Return — a Field and the Source Document it was extracted from, a Thread and its Subject, a Request and the document it asks for. Not a stored entity: a Connection is a _derived_ edge the navigation layer surfaces so a User can move from one object to a related one without leaving the Return (challenge 04). The object graph is Return-scoped — every Connection stays within one Return.
+_Avoid_: link, relation, edge, reference, association
+
+**Trail**:
+The path of objects a User has moved through within a Return, surfaced as an orientation breadcrumb and a "back to where you were" control. The Trail is what keeps a cross-object journey — following a Request to its Thread to a Source Document — from costing the User their place. Return-scoped; leaving the Return clears it.
+_Avoid_: history, breadcrumb, stack, path, journey
+
+**Deep link**:
+An addressable URL that opens the app at a specific place within a Return — a given Area and focused object — so a point in the workflow can be shared, bookmarked, or returned to with the browser's Back. The mechanism behind the Trail: each move to a connected object is its own addressable location.
+_Avoid_: permalink, anchor, route, bookmark
+
+**Area**:
+A navigable section of a Return that groups related objects for the contextual navigation tier — Overview, Documents, Questions & Requests, Messages (challenge 04). The unit the contextual navigation moves between; each Area is a Deep link. Firm and Client Roles are offered different Areas, but the tier is the same idea on both. Not a **Section** (that already means a group of Fields).
+_Avoid_: tab, page, section, panel, view

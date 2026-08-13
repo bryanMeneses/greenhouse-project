@@ -8,23 +8,7 @@ import { getReturn } from "@/mocks/returns";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
-/** The "Back to dashboard" control, shared by the review and not-found states. */
-function BackToDashboard() {
-  return (
-    <Link
-      to="/"
-      className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-muted-foreground transition-colors",
-        "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-      )}
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Back to dashboard
-    </Link>
-  );
-}
-
-/** A link home, for states that shouldn't assume the visitor has a dashboard. */
+/** A link home, for states that don't have the Return's breadcrumb. */
 function GoHome() {
   return (
     <Link
@@ -42,8 +26,9 @@ function GoHome() {
 
 /**
  * A Return's review page (`/returns/:returnId`): reads the id from the URL, loads
- * the Return, and composes the review surface with a back link. A deep link to an
- * unknown Return falls back to a graceful not-found rather than crashing.
+ * the Return, and composes the review surface (header with a back button + the
+ * breadcrumb trail) with its Areas. A deep link to an unknown Return falls back to
+ * a graceful not-found rather than crashing.
  *
  * The review is a Firm-only workspace (ADR-0005). A Client Role reaching it (e.g.
  * via a deep link) gets an explicit role-aware "not available" state in the client
@@ -74,7 +59,7 @@ export function ReturnReviewPage() {
     return (
       <InternalLayout title="Return not found">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
-          <BackToDashboard />
+          <GoHome />
           <p className="text-sm text-muted-foreground">
             We couldn't find that Return. It may have been removed, or the link
             may be wrong.
@@ -85,9 +70,14 @@ export function ReturnReviewPage() {
   }
 
   return (
-    <InternalLayout title={`${taxReturn.client} · ${taxReturn.taxYear} Return`}>
+    <InternalLayout
+      title={`${taxReturn.client} · ${taxReturn.taxYear} Return`}
+      activeReturn={{
+        label: `${taxReturn.client} · ${taxReturn.taxYear}`,
+        basePath: `/returns/${taxReturn.id}`,
+      }}
+    >
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <BackToDashboard />
         {/* key resets the page's tab + local state when switching Returns. */}
         <ReturnWorkspace
           key={taxReturn.id}

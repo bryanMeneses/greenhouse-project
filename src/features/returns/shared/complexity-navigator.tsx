@@ -18,7 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DocumentPane } from "@/features/returns/review/components/document-pane";
 import { getComplexityItems } from "@/mocks/complexity";
+import { getThreadsForReturn } from "@/mocks/collaboration";
+import { threadsVisibleTo } from "./collaboration";
+import { areasFor } from "./areas";
+import { connectionsFor } from "./connections";
+import { ConnectionLink } from "./connection-link";
+import { useReturnView, type ReturnFocus } from "@/hooks/use-return-view";
 import {
   ALL_SECTIONS,
   complexityStatusLabel,
@@ -72,6 +79,21 @@ const FILTERS: { value: ComplexityFilter; label: string }[] = [
   })),
 ];
 
+/**
+ * Whether a URL focus points at this item — matched by its real object identity
+ * (a kind + id pair), never by guessing across id namespaces, so a field id can't
+ * collide with a document or thread id and highlight the wrong row.
+ */
+function focusMatches(item: ComplexityItem, focus: ReturnFocus): boolean {
+  if (item.connectionTarget) {
+    return (
+      item.connectionTarget.kind === focus.kind &&
+      item.connectionTarget.id === focus.id
+    );
+  }
+  return focus.kind === "field" && item.fieldId === focus.id;
+}
+
 type ComplexityNavigatorProps = {
   taxReturn: Return;
   viewerFamily: RoleFamily;
@@ -91,6 +113,14 @@ export function ComplexityNavigator({
   viewerFamily,
   onInspectField,
 }: ComplexityNavigatorProps) {
+  const { focus, setFocus } = useReturnView({
+    areas: areasFor(viewerFamily).map((area) => area.id),
+  });
+  // Browsing the map is local state. A synthetic item (calculation, warning,
+  // generated volume) has no real object to address, and a Field row must not
+  // write a field focus either — a field focus in the URL means "inspect this
+  // Field's provenance" (the card), not "browse it in the pane".
+  const [localFocusId, setLocalFocusId] = React.useState<string | null>(null);
   const items = React.useMemo(
     () => getComplexityItems(taxReturn, viewerFamily),
     [taxReturn, viewerFamily],
@@ -98,7 +128,6 @@ export function ComplexityNavigator({
   const [query, setQuery] = React.useState("");
   const [filter, setFilter] = React.useState<ComplexityFilter>("all");
   const [sectionId, setSectionId] = React.useState(ALL_SECTIONS);
-  const [selectedId, setSelectedId] = React.useState(items[0]?.id ?? "");
 
   // Everything search + status allow, before the section filter. This is the
   // universe the hierarchy rail describes, so its "All work" total and per-section
@@ -119,7 +148,11 @@ export function ComplexityNavigator({
     [railItems],
   );
   const selectedItem =
-    visibleItems.find((item) => item.id === selectedId) ?? visibleItems[0];
+    visibleItems.find((item) => focus !== null && focusMatches(item, focus)) ??
+    visibleItems.find(
+      (item) => localFocusId !== null && item.id === localFocusId,
+    ) ??
+    visibleItems[0];
 
   // Cap the rendered rows for scale, but always keep the selected row on screen so
   // the detail pane never describes an item with no visible, highlighted row.
@@ -135,6 +168,7 @@ export function ComplexityNavigator({
   // so returning to the broader view restores the preparer's place.
 
   const isClient = viewerFamily === "client";
+  const eyebrow = "Browse the work";
   const title = isClient ? "Your return at a glance" : "Return map";
   const subtitle = isClient
     ? "Start with what matters to you. Firm review detail stays behind the scenes."
@@ -153,7 +187,7 @@ export function ComplexityNavigator({
               <Layers3 aria-hidden="true" className="size-4" />
             </span>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Browse the work
+              {eyebrow}
             </p>
           </div>
           <h2
@@ -316,7 +350,24 @@ export function ComplexityNavigator({
                       key={item.id}
                       item={item}
                       selected={item.id === selectedItem?.id}
-                      onSelect={() => setSelectedId(item.id)}
+                      onSelect={() => {
+                        // A Field row is a browse, not an inspection: select it in
+                        // the detail pane and drop any object focus so the local
+                        // selection wins. The Provenance dialog is opened by the
+                        // explicit paths — "Open field evidence" in the pane, the
+                        // Return's field rows, and the Review Queue.
+                        const isField =
+                          Boolean(item.fieldId) ||
+                          item.connectionTarget?.kind === "field";
+                        if (isField) {
+                          setLocalFocusId(item.id);
+                          setFocus(null);
+                          return;
+                        }
+                        const target = item.connectionTarget ?? null;
+                        setLocalFocusId(target ? null : item.id);
+                        setFocus(target);
+                      }}
                     />
                   ))}
                   {visibleItems.length > MAX_VISIBLE_ROWS && (
@@ -331,6 +382,7 @@ export function ComplexityNavigator({
 
             <ComplexityDetail
               item={selectedItem}
+              taxReturn={taxReturn}
               viewerFamily={viewerFamily}
               onInspectField={onInspectField}
             />
@@ -393,10 +445,12 @@ function ComplexityItemRow({
 
 function ComplexityDetail({
   item,
+  taxReturn,
   viewerFamily,
   onInspectField,
 }: {
   item?: ComplexityItem;
+  taxReturn: Return;
   viewerFamily: RoleFamily;
   onInspectField?: (fieldId: string) => void;
 }) {
@@ -417,6 +471,29 @@ function ComplexityDetail({
 
   const config = KIND_CONFIG[item.kind];
   const Icon = config.icon;
+  // A Client navigator never surfaces a Connection to an internal-only Thread.
+  const threads = threadsVisibleTo(
+    getThreadsForReturn(taxReturn.id),
+    viewerFamily,
+  );
+  const target = item.connectionTarget;
+  // The heading's focus identity — what a Connection-follow would target. Only
+  // real objects carry one; synthetic items get no focus attributes.
+  const focusIdentity =
+    target ??
+    (item.fieldId ? ({ kind: "field", id: item.fieldId } as const) : null);
+  const connections = target
+    ? connectionsFor(target, taxReturn, threads, viewerFamily)
+    : [];
+  // A real Source Document renders its actual scanned page — the first Field
+  // source that references it, so the extracted region comes up highlighted.
+  const documentId = target?.kind === "source-document" ? target.id : undefined;
+  const documentSource = documentId
+    ? taxReturn.sections
+        .flatMap((section) => section.fields)
+        .flatMap((field) => field.sources ?? [])
+        .find((source) => source.documentId === documentId)
+    : undefined;
   const canOpenField =
     viewerFamily === "firm" && item.fieldId && onInspectField;
 
@@ -438,15 +515,26 @@ function ComplexityDetail({
         <p className="mb-1 text-xs font-medium text-muted-foreground">
           Return map <span aria-hidden="true">/</span> {item.sectionTitle}
         </p>
-        <h3 className="font-serif text-lg font-semibold tracking-tight">
+        <h3
+          tabIndex={-1}
+          data-return-focus={focusIdentity?.id}
+          data-return-focus-kind={focusIdentity?.kind}
+          className="font-serif text-lg font-semibold tracking-tight outline-none"
+        >
           {item.title}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>
       </div>
+      {documentSource && (
+        <DocumentPane
+          key={`${documentSource.documentId}-${documentSource.page}-${documentSource.region}`}
+          source={documentSource}
+        />
+      )}
       <div className="rounded-md border border-border bg-card px-3 py-3 text-sm leading-relaxed text-muted-foreground">
         {item.detail}
       </div>
-      {item.sourceDocument && (
+      {item.sourceDocument && !documentSource && (
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
           <FileText
             aria-hidden="true"
@@ -478,6 +566,20 @@ function ComplexityDetail({
           </ul>
         </div>
       )}
+      {connections.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs font-medium text-muted-foreground">
+            Connected on this Return
+          </p>
+          <ul className="flex flex-col gap-1 text-xs">
+            {connections.map((connection) => (
+              <li key={connection.id}>
+                <ConnectionLink connection={connection} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {item.suggestedResolution && (
         <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
           <p className="mb-1 flex items-center gap-1.5 font-medium">
@@ -498,15 +600,17 @@ function ComplexityDetail({
           <ChevronRight aria-hidden="true" />
         </Button>
       )}
-      {item.kind === "source-document" && !item.simulated && (
-        <p className="flex items-start gap-2 text-xs text-primary">
-          <CheckCircle2
-            aria-hidden="true"
-            className="mt-0.5 size-3.5 shrink-0"
-          />
-          Source-level context stays one click away from the review summary.
-        </p>
-      )}
+      {item.kind === "source-document" &&
+        !item.simulated &&
+        !documentSource && (
+          <p className="flex items-start gap-2 text-xs text-primary">
+            <CheckCircle2
+              aria-hidden="true"
+              className="mt-0.5 size-3.5 shrink-0"
+            />
+            Source-level context stays one click away from the review summary.
+          </p>
+        )}
       {item.simulated && (
         <p className="flex items-start gap-2 text-[11px] text-muted-foreground">
           <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />

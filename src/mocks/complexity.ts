@@ -7,6 +7,7 @@ import type {
 } from "@/features/returns/shared/complexity";
 import type { Field, Return } from "@/features/returns/shared/returns";
 import { isOpenItemActive } from "@/features/returns/shared/returns";
+import { collectSourceDocuments } from "@/features/returns/shared/connections";
 
 const SYNTHETIC_SECTIONS = [
   {
@@ -68,6 +69,7 @@ function realFieldItems(taxReturn: Return): ComplexityItem[] {
       sectionTitle: section.title,
       status: fieldStatus(field),
       fieldId: field.id,
+      connectionTarget: { kind: "field", id: field.id },
       sourceDocument: field.sourceDocument,
       tags: [
         field.label,
@@ -82,47 +84,32 @@ function realFieldItems(taxReturn: Return): ComplexityItem[] {
   );
 }
 
-/** Map each Source Document to its title and the Field labels it feeds. */
-function collectSourceDocuments(
-  taxReturn: Return,
-): Map<string, { title: string; fieldLabels: string[] }> {
-  const documents = new Map<string, { title: string; fieldLabels: string[] }>();
-  for (const field of taxReturn.sections.flatMap((section) => section.fields)) {
-    for (const source of field.sources ?? []) {
-      const existing = documents.get(source.documentId);
-      if (existing) existing.fieldLabels.push(field.label);
-      else
-        documents.set(source.documentId, {
-          title: sourceDocumentTitle(source.documentId),
-          fieldLabels: [field.label],
-        });
-    }
-  }
-  return documents;
-}
-
 function sourceDocumentItems(taxReturn: Return): ComplexityItem[] {
-  return [...collectSourceDocuments(taxReturn).entries()].map(([documentId, document]) => ({
-    id: `document-${documentId}`,
-    kind: "source-document" as const,
-    title: document.title,
-    summary: `${document.fieldLabels.length} connected Field${document.fieldLabels.length === 1 ? "" : "s"}`,
-    detail:
-      "Source-level detail is available without leaving the Return. Choose a connected Field to inspect the highlighted page region.",
-    sectionId: "supporting-documents",
-    sectionTitle: "Supporting documents",
-    status: "verified" as const,
-    sourceDocument: document.title,
-    connectedFields: document.fieldLabels,
-    tags: [document.title, documentId, ...document.fieldLabels],
-    audience: "firm" as const,
-  }));
+  return [...collectSourceDocuments(taxReturn).entries()].map(
+    ([documentId, document]) => ({
+      id: `document-${documentId}`,
+      kind: "source-document" as const,
+      title: document.title,
+      summary: `${document.fieldLabels.length} connected Field${document.fieldLabels.length === 1 ? "" : "s"}`,
+      detail:
+        "Source-level detail is available without leaving the Return. Choose a connected Field to inspect the highlighted page region.",
+      sectionId: "supporting-documents",
+      sectionTitle: "Supporting documents",
+      status: "verified" as const,
+      connectionTarget: { kind: "source-document", id: documentId },
+      sourceDocument: document.title,
+      connectedFields: document.fieldLabels,
+      tags: [document.title, documentId, ...document.fieldLabels],
+      audience: "firm" as const,
+    }),
+  );
 }
 
 function openItemItems(taxReturn: Return): ComplexityItem[] {
   return taxReturn.openItems.filter(isOpenItemActive).map((item) => ({
     id: `open-item-${item.id}`,
     kind: "open-item" as const,
+    connectionTarget: { kind: "open-item", id: item.id },
     title: item.label,
     summary: item.owner === "client" ? "Waiting on client" : "Your action",
     detail:
@@ -141,6 +128,7 @@ function messageItems(taxReturn: Return): ComplexityItem[] {
   return getThreadsForReturn(taxReturn.id).map((thread) => ({
     id: `thread-${thread.id}`,
     kind: "thread" as const,
+    connectionTarget: { kind: "thread", id: thread.id },
     title: thread.title,
     summary: `${thread.messages.length} message${thread.messages.length === 1 ? "" : "s"}`,
     detail:
@@ -221,28 +209,27 @@ export function buildFirmComplexityItems(taxReturn: Return): ComplexityItem[] {
 function buildClientComplexityItems(taxReturn: Return): ComplexityItem[] {
   const documentItems: ComplexityItem[] = [
     ...collectSourceDocuments(taxReturn).entries(),
-  ].map(
-    ([documentId, { title }]) => ({
-      id: `client-document-${documentId}`,
-      kind: "source-document" as const,
-      title: title.replace(/\s*\([^)]*\)/, ""),
-      summary: "Received from you",
-      detail:
-        "Your preparer can use this document as evidence for your Return.",
-      sectionId: "your-documents",
-      sectionTitle: "Your documents",
-      status: "verified" as const,
-      sourceDocument: title,
-      tags: [title, documentId, "document", "received"],
-      audience: "client" as const,
-    }),
-  );
+  ].map(([documentId, { title }]) => ({
+    id: `client-document-${documentId}`,
+    kind: "source-document" as const,
+    connectionTarget: { kind: "source-document", id: documentId },
+    title: title.replace(/\s*\([^)]*\)/, ""),
+    summary: "Received from you",
+    detail: "Your preparer can use this document as evidence for your Return.",
+    sectionId: "your-documents",
+    sectionTitle: "Your documents",
+    status: "verified" as const,
+    sourceDocument: title,
+    tags: [title, documentId, "document", "received"],
+    audience: "client" as const,
+  }));
 
   const requestItems: ComplexityItem[] = taxReturn.openItems
     .filter((item) => item.owner === "client" && isOpenItemActive(item))
     .map((item) => ({
       id: `client-request-${item.id}`,
       kind: "open-item" as const,
+      connectionTarget: { kind: "open-item", id: item.id },
       title: item.label,
       summary: "Needs your attention",
       detail:

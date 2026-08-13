@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router";
 
@@ -18,7 +18,7 @@ function renderPage() {
   );
 }
 
-describe("ReturnReviewPage — header + tab shell", () => {
+describe("ReturnReviewPage — header + contextual Areas", () => {
   beforeEach(() => localStorage.clear());
 
   it("renders the return identity header", () => {
@@ -38,48 +38,69 @@ describe("ReturnReviewPage — header + tab shell", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps the return status band above the tabs", () => {
-    renderPage();
-    expect(
-      screen.getByRole("heading", { name: "Return status" }),
-    ).toBeInTheDocument();
-  });
-
-  it("defaults to the Overview tab and switches to Collaboration", async () => {
+  it("shows the Return status band on Overview only", async () => {
     const user = userEvent.setup();
     renderPage();
 
-    const overview = screen.getByRole("tab", { name: /Overview/ });
-    const collaboration = screen.getByRole("tab", { name: /Collaboration/ });
-    expect(overview).toHaveAttribute("aria-selected", "true");
-    expect(collaboration).toHaveAttribute("aria-selected", "false");
+    expect(
+      screen.getByRole("heading", { name: "Return status" }),
+    ).toBeInTheDocument();
 
-    await user.click(collaboration);
-
-    expect(collaboration).toHaveAttribute("aria-selected", "true");
-    expect(overview).toHaveAttribute("aria-selected", "false");
-  });
-
-  it("uses the open request count for Collaboration badges", () => {
-    renderPage();
+    await user.click(screen.getByRole("link", { name: "Documents" }));
 
     expect(
-      screen.getByRole("tab", { name: /Collaboration/ }),
-    ).toHaveTextContent("2");
-    expect(screen.getByRole("button", { name: /Messages/ })).toHaveTextContent(
-      "2",
-    );
+      screen.queryByRole("heading", { name: "Return status" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("jumps to Collaboration from the header's Messages action", async () => {
+  it("defaults to Overview and switches to Messages from the contextual tier", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const primary = () => screen.getByRole("navigation", { name: "Primary" });
+    expect(
+      within(primary()).getByRole("link", { name: "Overview" }),
+    ).toHaveAttribute("aria-current", "page");
+
+    await user.click(within(primary()).getByRole("link", { name: "Messages" }));
+
+    expect(
+      within(primary()).getByRole("link", { name: "Overview" }),
+    ).not.toHaveAttribute("aria-current", "page");
+    expect(
+      within(primary()).getByRole("link", { name: "Messages" }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
+  it("lists the four firm Areas in the contextual tier, with the activity Area renamed", () => {
+    renderPage();
+
+    const primary = within(screen.getByRole("navigation", { name: "Primary" }));
+    expect(primary.getByRole("link", { name: "Overview" })).toBeInTheDocument();
+    expect(
+      primary.getByRole("link", { name: "Documents" }),
+    ).toBeInTheDocument();
+    expect(
+      primary.getByRole("link", { name: "Requests & Activity" }),
+    ).toBeInTheDocument();
+    expect(primary.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    // The old label is gone.
+    expect(
+      primary.queryByRole("link", { name: "Questions & Requests" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("jumps to Messages from the header's Messages action", async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(screen.getByRole("button", { name: /Messages/ }));
 
-    expect(screen.getByRole("tab", { name: /Collaboration/ })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(
+      within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
+        "link",
+        { name: "Messages" },
+      ),
+    ).toHaveAttribute("aria-current", "page");
   });
 });
