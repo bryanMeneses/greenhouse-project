@@ -21,10 +21,11 @@ type TrailProps = {
   threads?: Thread[];
 };
 
-/** The top-most destination each shell breadcrumbs from — the Firm's Dashboard, or
- * the Client's standing "My Return". Both are `/`, the same route the Role forks. */
+/** The top-most destination each shell breadcrumbs from — the Firm's Command
+ * center, or the Client's standing "My Return". Both are `/`, the same route the
+ * Role forks. */
 const HOME_CRUMB: Record<RoleFamily, { label: string; to: string }> = {
-  firm: { label: "Dashboard", to: "/" },
+  firm: { label: "Command center", to: "/" },
   client: { label: "My Return", to: "/" },
 };
 

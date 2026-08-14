@@ -11,7 +11,7 @@ import { RoleContext, type RoleContextValue } from "@/hooks/use-role";
  * validated on read so a stale or malformed value falls back to the default.
  */
 
-const STORAGE_KEY = "greenhouse:active-role";
+const STORAGE_KEY = "ledgerline:active-role";
 
 /** Read a persisted active Role, ignoring anything malformed or now-invalid. */
 function readStoredActiveRole(): ActiveRole {

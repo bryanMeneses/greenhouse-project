@@ -41,12 +41,12 @@ function renderTrail() {
 }
 
 describe("Return Trail and Connection links", () => {
-  it("crumbs Dashboard › Return › Area › focused object, with the object current", () => {
+  it("crumbs Command center › Return › Area › focused object, with the object current", () => {
     renderTrail();
 
     const trail = screen.getByRole("navigation", { name: "Trail" });
     expect(trail).toHaveTextContent(
-      /Dashboard.*Nguyen Family · 2024.*Messages.*Requesting your Form 1098/,
+      /Command center.*Nguyen Family · 2024.*Messages.*Requesting your Form 1098/,
     );
     // The Return crumb links back to Overview.
     expect(
@@ -58,7 +58,7 @@ describe("Return Trail and Connection links", () => {
     );
   });
 
-  it("uses the Client's top-most level instead of Dashboard, with no Return crumb", () => {
+  it("uses the Client's top-most level instead of Command center, with no Return crumb", () => {
     render(
       <MemoryRouter
         initialEntries={[
@@ -71,7 +71,7 @@ describe("Return Trail and Connection links", () => {
 
     const trail = screen.getByRole("navigation", { name: "Trail" });
     expect(trail).toHaveTextContent(/My Return.*Tasks.*2024 Form 1098/);
-    expect(trail).not.toHaveTextContent("Dashboard");
+    expect(trail).not.toHaveTextContent("Command center");
     // "My Return" is the Client's Return, so there is no extra Return crumb.
     expect(trail).not.toHaveTextContent("Nguyen Family · 2024");
   });

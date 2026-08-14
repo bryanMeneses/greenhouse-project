@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
-import { Sprout, type LucideIcon } from "lucide-react";
+import { Landmark, type LucideIcon } from "lucide-react";
 
 import {
   Sidebar,
@@ -53,6 +53,8 @@ type AppShellProps = {
   /** Hidden during Client first-run (ch. 03) until onboarding completes. */
   contextualNav?: boolean;
   navExtra?: React.ReactNode;
+  /** Header actions before the role switcher (e.g. the Firm's ⌘K search). */
+  headerActions?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -63,6 +65,7 @@ export function AppShell({
   returnContext,
   contextualNav = true,
   navExtra,
+  headerActions,
   children,
 }: AppShellProps) {
   return (
@@ -78,9 +81,14 @@ export function AppShell({
           <h1 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-tight">
             {title}
           </h1>
+          {headerActions}
           <RoleSwitcher />
         </header>
-        <div className="min-w-0 flex-1 p-6">{children}</div>
+        <div className="min-w-0 flex-1 p-6">
+          {/* One uniform content width for every surface — the shell owns it so no
+              page sets its own (dashboard, roster, and Return all read the same). */}
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
@@ -113,10 +121,10 @@ function AppSidebar({
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-1">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sprout aria-hidden="true" className="size-4" />
+            <Landmark aria-hidden="true" className="size-4" />
           </span>
           <span className="font-serif text-base font-semibold group-data-[collapsible=icon]:hidden">
-            Greenhouse Tax
+            Ledgerline
           </span>
         </div>
       </SidebarHeader>

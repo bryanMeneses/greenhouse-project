@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { axe } from "vitest-axe";
 
@@ -50,57 +50,82 @@ const returns: Return[] = [
   makeReturn("rtn-overdue", "Nguyen Family", {
     deadline: "2026-08-01",
     fields: [lowConfidenceField("f1")],
+    openItems: [
+      { id: "t1", label: "Send reviewer handoff", owner: "preparer" },
+    ],
   }),
   makeReturn("rtn-blocked", "Owens Retail", {
     deadline: "2026-11-01",
-    openItems: [{ id: "oi", label: "Waiting on client", owner: "client" }],
+    openItems: [{ id: "r1", label: "Waiting on client", owner: "client" }],
   }),
   makeReturn("rtn-calm", "Underwood Estate", { deadline: "2026-11-01" }),
 ];
 
-/** Rows are router links, so the dashboard needs a router in scope. */
+/** Rows and the action list are router links, so a router is in scope. */
 function renderDashboard() {
   return render(
     <MemoryRouter>
-      <Dashboard returns={returns} now={NOW} />
+      <Dashboard returns={returns} now={NOW} greetingName="Jordan" />
     </MemoryRouter>,
   );
 }
 
 describe("Dashboard", () => {
-  it("groups Returns into Needs you now / Waiting on others / On track", () => {
+  it("greets the preparer and shows the four practice-wide stat tiles", () => {
     renderDashboard();
 
-    expect(
-      screen.getByRole("heading", { name: /Needs you now/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /Waiting on others/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /On track/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Good morning, Jordan/)).toBeInTheDocument();
+    for (const label of [
+      "Active returns",
+      "Open items",
+      "Needs review",
+      "Requests",
+    ]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
   });
 
-  it("renders a row per Return with Stage, Open Item, and low-Confidence stats", () => {
-    renderDashboard();
-
-    // Each row is a link whose accessible name summarizes its stats.
-    const overdue = screen.getByRole("link", { name: /Nguyen Family/i });
-    expect(overdue).toHaveAccessibleName(/In review/i);
-    expect(overdue).toHaveAccessibleName(/Overdue/i);
-    expect(overdue).toHaveAccessibleName(/1 low-Confidence Field/i);
-
-    const blocked = screen.getByRole("link", { name: /Owens Retail/i });
-    expect(blocked).toHaveAccessibleName(/1 Open Item/i);
-  });
-
-  it("links each row to the Return's review URL (deep-linkable)", () => {
+  it("ranks the preparer's own work across every Return and deep-links each into its Area", () => {
     renderDashboard();
 
     expect(
-      screen.getByRole("link", { name: /Nguyen Family/i }),
+      screen.getByRole("heading", { name: /Work that needs you/i }),
+    ).toBeInTheDocument();
+
+    // Both a low-confidence batch and a preparer Open Item open the review
+    // workspace (Overview) — where the work actually happens, never a dead-end.
+    expect(
+      screen.getByRole("link", { name: /Review 1 low-confidence value/i }),
+    ).toHaveAttribute("href", "/returns/rtn-overdue?area=overview");
+    expect(
+      screen.getByRole("link", { name: /Send reviewer handoff/i }),
+    ).toHaveAttribute("href", "/returns/rtn-overdue?area=overview");
+
+    // The Client-owned Request is waiting on the Client, so it's not framed as the
+    // Preparer's work — it never appears in "Work that needs you".
+    expect(
+      screen.queryByRole("link", { name: /Waiting on client/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lists returns in the queue table, each linking to its review", () => {
+    renderDashboard();
+
+    const queue = screen.getByRole("region", { name: /Return queue/i });
+    expect(
+      within(queue).getByRole("link", { name: /Nguyen Family/i }),
     ).toHaveAttribute("href", "/returns/rtn-overdue");
+    expect(
+      within(queue).getByRole("link", { name: /Underwood Estate/i }),
+    ).toHaveAttribute("href", "/returns/rtn-calm");
+  });
+
+  it("surfaces the AI's review signals at the landing level", () => {
+    renderDashboard();
+
+    expect(
+      screen.getByRole("heading", { name: /What the AI wants you to check/i }),
+    ).toBeInTheDocument();
   });
 
   it("has no accessibility violations", async () => {

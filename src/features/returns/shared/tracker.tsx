@@ -70,12 +70,15 @@ function TrackerStep({ step, label }: { step: Step; label: string }) {
       className={cn(
         "relative flex flex-col items-center gap-1.5 pt-1",
         // Connector line behind each step (except the first).
-        "before:absolute before:top-3.25 before:right-1/2",
-        "before:h-px before:w-full",
+        "before:absolute before:top-3 before:right-1/2",
+        "before:h-0.5 before:w-full before:rounded-full",
         // The first step has nothing to its left — hide its connector, not the last's.
         "first:before:hidden",
-        // Color the connector to match the completed/upcoming state.
-        step.completed ? "before:bg-primary" : "before:bg-border",
+        // Fill the path up to and including the current node, so the line shows how
+        // far the Return has progressed; the segment past "here" stays neutral.
+        step.completed || step.current
+          ? "before:bg-primary"
+          : "before:bg-border",
       )}
     >
       {/* Circle: checkmark for completed, solid for current, hollow for upcoming. */}
@@ -86,7 +89,9 @@ function TrackerStep({ step, label }: { step: Step; label: string }) {
           step.completed && !isFiled
             ? "border-primary bg-primary text-primary-foreground"
             : step.current
-              ? "border-primary bg-primary text-primary-foreground"
+              ? // "You are here": a soft halo ring sets the current node apart from
+                // the solid, checked completed nodes.
+                "border-primary bg-primary text-primary-foreground ring-4 ring-primary/20"
               : "border-muted-foreground/30 bg-background text-transparent",
         )}
       >
@@ -105,7 +110,7 @@ function TrackerStep({ step, label }: { step: Step; label: string }) {
           step.completed && !isFiled
             ? "text-foreground"
             : step.current
-              ? "text-foreground"
+              ? "font-semibold text-foreground"
               : isFiled
                 ? "text-muted-foreground/50"
                 : "text-muted-foreground",

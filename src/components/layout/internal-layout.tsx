@@ -1,37 +1,21 @@
 import * as React from "react";
-import { FileText, LayoutDashboard, ListChecks } from "lucide-react";
+import { Briefcase, FileText, LayoutDashboard } from "lucide-react";
 
 import {
   AppShell,
-  disabledNavClassName,
   type NavItem,
   type ReturnContext,
 } from "@/components/layout/app-shell";
-import { SidebarMenuItem } from "@/components/ui/sidebar";
+import { CommandSearch } from "@/components/layout/command-search";
 import { FIRM_AREAS } from "@/features/returns/shared/areas";
 
-// The firm global tier is Dashboard alone — a Preparer works many Returns, so
-// there is no standing "the Return". The contextual Area tier is supplied per
-// Return, only while one is open (see `activeReturn`).
+// The firm global tier is the Command center + the Returns roster — a Preparer
+// works many Returns, so there is no standing "the Return". The contextual Area
+// tier is supplied per Return, only while one is open (see `activeReturn`).
 const INTERNAL_NAV: NavItem[] = [
-  { label: "Dashboard", to: "/", icon: LayoutDashboard },
+  { label: "Command center", to: "/", icon: LayoutDashboard },
+  { label: "Returns", to: "/returns", icon: Briefcase },
 ];
-
-function ReviewQueueHint() {
-  return (
-    <SidebarMenuItem>
-      <span aria-disabled="true" className={disabledNavClassName()}>
-        <ListChecks aria-hidden="true" className="size-4 shrink-0" />
-        <span className="group-data-[collapsible=icon]:hidden">
-          Review Queue
-        </span>
-        <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase group-data-[collapsible=icon]:hidden">
-          Soon
-        </span>
-      </span>
-    </SidebarMenuItem>
-  );
-}
 
 type InternalLayoutProps = {
   title: string;
@@ -54,7 +38,7 @@ export function InternalLayout({
       title={title}
       nav={INTERNAL_NAV}
       returnContext={returnContext}
-      navExtra={<ReviewQueueHint />}
+      headerActions={<CommandSearch />}
     >
       {children}
     </AppShell>

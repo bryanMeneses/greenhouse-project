@@ -1,5 +1,5 @@
-import { reviewQueue } from "@/features/returns/shared/review-queue";
-import type { Field, Return } from "@/features/returns/shared/returns";
+import { lowConfidenceAwaitingReview } from "@/features/returns/shared/review-queue";
+import type { Return } from "@/features/returns/shared/returns";
 import { isOpenItemActive } from "@/features/returns/shared/returns";
 
 /**
@@ -81,6 +81,15 @@ const GROUP_FOR_URGENCY: Record<ReturnUrgency, DashboardGroup> = {
   "in-progress": "on-track",
 };
 
+/**
+ * Whether an urgency reads as pressing — the "needs you now" group (overdue, near
+ * deadline, or awaiting review). The single source both the group split and the
+ * action list's alert marker derive from, so a new urgency can't drift out of sync.
+ */
+export function isPressing(urgency: ReturnUrgency): boolean {
+  return GROUP_FOR_URGENCY[urgency] === "needs-you-now";
+}
+
 /** Parse a deadline (an ISO `YYYY-MM-DD` date) to a local Date at midnight. */
 export function parseDeadline(deadline: string): Date {
   return new Date(`${deadline}T00:00:00`);
@@ -101,17 +110,6 @@ function daysUntilDeadline(deadline: string, now: Date): number {
 function isBlockedOnClient(taxReturn: Return): boolean {
   return taxReturn.openItems.some(
     (item) => item.owner === "client" && isOpenItemActive(item),
-  );
-}
-
-/**
- * The low-Confidence Fields still awaiting review: those in the Review Queue that
- * the Preparer hasn't resolved yet. A verified (or locked) low-Confidence Field is
- * done and no longer counts.
- */
-function lowConfidenceAwaitingReview(taxReturn: Return): Field[] {
-  return reviewQueue(taxReturn).filter(
-    (field) => field.state !== "verified" && field.state !== "locked",
   );
 }
 

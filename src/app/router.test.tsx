@@ -14,21 +14,21 @@ function renderAt(path: string) {
 
 /** Boot the app as a given active Role by seeding the store RoleProvider reads. */
 function actingAs(activeRole: ActiveRole) {
-  localStorage.setItem("greenhouse:active-role", JSON.stringify(activeRole));
+  localStorage.setItem("ledgerline:active-role", JSON.stringify(activeRole));
 }
 
 describe("router", () => {
   // The active Role persists to localStorage; reset it so each test starts fresh.
   beforeEach(() => localStorage.clear());
 
-  it("renders the dashboard at /", () => {
+  it("renders the Command center at /", () => {
     renderAt("/");
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Dashboard" }),
+      screen.getByRole("heading", { level: 1, name: "Command center" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /Needs you now/i }),
+      screen.getByRole("heading", { name: /Work that needs you/i }),
     ).toBeInTheDocument();
   });
 
@@ -44,13 +44,13 @@ describe("router", () => {
     expect(
       screen.getByRole("region", { name: "Review Queue" }),
     ).toBeInTheDocument();
-    // Point 1 IA: the open Return — not Dashboard — is the current destination
-    // once you've drilled in, and its Areas fill the contextual tier. (The
-    // breadcrumb also carries a Dashboard crumb, so scope to the primary nav.)
+    // Point 1 IA: the open Return — not Command center — is the current
+    // destination once you've drilled in, and its Areas fill the contextual tier.
+    // (The breadcrumb also carries a Command center crumb, so scope to the nav.)
     expect(
       within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
         "link",
-        { name: "Dashboard" },
+        { name: "Command center" },
       ),
     ).not.toHaveAttribute("aria-current", "page");
     // The sidebar's Return link is the current destination; the breadcrumb also
@@ -63,29 +63,30 @@ describe("router", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
-  it("navigates from a dashboard row to that Return and back", async () => {
+  it("navigates from a Return queue row to that Return and back", async () => {
     const user = userEvent.setup();
     renderAt("/");
 
-    await user.click(screen.getByRole("link", { name: /Reyes Household/i }));
+    // Click the top-ranked row in the Command center's Return queue glance
+    // (scoped to the table, so the header's "View all returns" link isn't picked).
+    const queue = screen.getByRole("region", { name: /Return queue/i });
+    const table = within(queue).getByRole("table");
+    await user.click(within(table).getAllByRole("link")[0]);
 
     expect(
-      screen.getByRole("heading", {
-        level: 1,
-        name: /Reyes Household · 2024 Return/,
-      }),
+      screen.getByRole("heading", { level: 1, name: /· 2024 Return$/ }),
     ).toBeInTheDocument();
 
-    // The Return breadcrumb's top-most crumb is the way back to Dashboard.
+    // The Return breadcrumb's top-most crumb is the way back to the Command center.
     await user.click(
       within(screen.getByRole("navigation", { name: "Trail" })).getByRole(
         "link",
-        { name: "Dashboard" },
+        { name: "Command center" },
       ),
     );
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Dashboard" }),
+      screen.getByRole("heading", { level: 1, name: "Command center" }),
     ).toBeInTheDocument();
   });
 
@@ -100,11 +101,15 @@ describe("router", () => {
     ).toBeInTheDocument();
   });
 
-  it("redirects the bare /returns path to the dashboard", async () => {
+  it("renders the firm Return roster at /returns", () => {
     renderAt("/returns");
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Dashboard" }),
+      screen.getByRole("heading", { level: 1, name: "Returns" }),
+    ).toBeInTheDocument();
+    // The roster groups by the same urgency buckets the Command center ranks by.
+    expect(
+      screen.getByRole("heading", { name: /Needs you now/i }),
     ).toBeInTheDocument();
   });
 
@@ -173,10 +178,10 @@ describe("router", () => {
     // only the existing active-role preference remains in localStorage.
     expect(
       localStorage.getItem(
-        "greenhouse:client-onboarding-complete:user-jordan:rtn-nguyen-2024",
+        "ledgerline:client-onboarding-complete:user-jordan:rtn-nguyen-2024",
       ),
     ).toBeNull();
-    expect(localStorage.getItem("greenhouse:active-role")).toBe(
+    expect(localStorage.getItem("ledgerline:active-role")).toBe(
       JSON.stringify({ userId: "user-jordan", role: "individual-taxpayer" }),
     );
 

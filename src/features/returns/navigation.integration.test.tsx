@@ -11,7 +11,7 @@ describe("Firm Provenance back behavior", () => {
     sessionStorage.clear();
     // Jordan acting as Preparer — the firm review workspace.
     localStorage.setItem(
-      "greenhouse:active-role",
+      "ledgerline:active-role",
       JSON.stringify({ userId: "user-jordan", role: "preparer" }),
     );
   });
@@ -45,7 +45,7 @@ describe("Client connective navigation", () => {
     localStorage.clear();
     sessionStorage.clear();
     localStorage.setItem(
-      "greenhouse:active-role",
+      "ledgerline:active-role",
       JSON.stringify({ userId: "user-jordan", role: "individual-taxpayer" }),
     );
   });

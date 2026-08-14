@@ -1,253 +1,104 @@
-import * as React from "react";
 import { Link } from "react-router";
-import {
-  AlertTriangle,
-  ChevronRight,
-  CircleDot,
-  Clock,
-  ListChecks,
-  PauseCircle,
-  ShieldAlert,
-  type LucideIcon,
-} from "lucide-react";
 
-import type { Return, Stage } from "@/features/returns/shared/returns";
+import type { Return } from "@/features/returns/shared/returns";
 import {
-  DASHBOARD_GROUP_CONFIG,
-  DASHBOARD_GROUP_ORDER,
-  DUE_SOON_DAYS,
-  parseDeadline,
-  rankDashboard,
-  type RankedReturn,
-  type ReturnUrgency,
-} from "@/features/dashboard/ranking";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+  dashboardStats,
+  buildActionList,
+} from "@/features/dashboard/command-center";
+import { StatTiles } from "./stat-tiles";
+import { ActionList } from "./action-list";
+import { AiSignals } from "./ai-signals";
+import { ReturnsTable } from "./returns-table";
 
 type DashboardProps = {
   returns: Return[];
-  /** Reference "today" the ranking measures deadlines against. */
+  /** Reference "today" the ranking and deadlines measure against. */
   now: Date;
+  /** The Preparer's first name for the greeting; omitted in isolation/tests. */
+  greetingName?: string;
 };
 
-const STAGE_LABEL: Record<Stage, string> = {
-  intake: "Intake",
-  "in-review": "In review",
-  "ready-to-file": "Ready to file",
-};
-
-/** Per-urgency badge treatment; the loudest tint on the signal that most needs a look. */
-const URGENCY_CONFIG: Record<
-  ReturnUrgency,
-  { label: string; icon: LucideIcon; className: string; iconClassName: string }
-> = {
-  overdue: {
-    label: "Overdue",
-    icon: AlertTriangle,
-    className: "bg-destructive/10 text-foreground",
-    iconClassName: "text-destructive",
-  },
-  "due-soon": {
-    label: "Due soon",
-    icon: Clock,
-    className: "bg-brand/15 text-foreground",
-    iconClassName: "text-brand",
-  },
-  "needs-review": {
-    label: "Needs review",
-    icon: ShieldAlert,
-    className: "bg-destructive/10 text-foreground",
-    iconClassName: "text-destructive",
-  },
-  "blocked-on-client": {
-    label: "Blocked on client",
-    icon: PauseCircle,
-    className: "bg-muted text-foreground",
-    iconClassName: "text-muted-foreground",
-  },
-  "in-progress": {
-    label: "In progress",
-    icon: CircleDot,
-    className: "bg-secondary text-secondary-foreground",
-    iconClassName: "text-primary",
-  },
-};
-
-/** A short, human deadline phrase plus whether it should read as urgent. */
-function formatDeadline(ranked: RankedReturn): {
-  text: string;
-  tone: "overdue" | "soon" | "normal";
-} {
-  const days = ranked.daysUntilDeadline;
-  if (days < 0) {
-    const late = Math.abs(days);
-    return {
-      text: `Overdue by ${late} day${late === 1 ? "" : "s"}`,
-      tone: "overdue",
-    };
-  }
-  if (days === 0) return { text: "Due today", tone: "soon" };
-  if (days === 1) return { text: "Due tomorrow", tone: "soon" };
-  if (days <= DUE_SOON_DAYS)
-    return { text: `Due in ${days} days`, tone: "soon" };
-
-  const label = parseDeadline(ranked.return.deadline).toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-    },
-  );
-  return { text: `Due ${label}`, tone: "normal" };
+function greeting(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
+
+/** How many rows the landing surfaces show before deferring to the full roster. */
+const QUEUE_GLANCE = 6;
 
 /**
- * The landing dashboard (challenge 07): every Return the Preparer owns, ranked by
- * urgency and split into Needs you now / Waiting on others / On track so the answer
- * to "what should I work on right now?" is the first thing on screen. Each row
- * carries the Return's Stage, Open Item count, and low-Confidence Field count, and
- * opens straight into that Return's review.
+ * The Firm Command Center (challenge 07): a snapshot of the whole book, not a bare
+ * list of Returns. A practice-wide stat row, the cross-Return action list that answers
+ * "what should I work on right now?", the AI's review signals, and a glance at the
+ * ranked queue — each a launch pad into the Return where the work happens. The full
+ * roster lives at `/returns`.
  */
-export function Dashboard({ returns, now }: DashboardProps) {
-  const ranked = rankDashboard(returns, now);
+export function Dashboard({ returns, now, greetingName }: DashboardProps) {
+  const stats = dashboardStats(returns, now);
+  const actionList = buildActionList(returns, now);
+  const queueShown = Math.min(QUEUE_GLANCE, returns.length);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8">
-      <p className="text-sm text-muted-foreground">
-        {ranked.length} Return{ranked.length === 1 ? "" : "s"} · sorted by what
-        needs you first.
-      </p>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          {/* The page h1 lives in the shell header ("Command center"); this hero
+              greeting is the content's lead, so it's an h2 — one h1 per page. */}
+          <h2 className="font-serif text-2xl font-semibold tracking-tight">
+            {greeting(now)}
+            {greetingName ? `, ${greetingName}.` : "."}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Here's the work that needs you today.
+          </p>
+        </div>
+        <Link
+          to="/returns"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          View all returns →
+        </Link>
+      </header>
 
-      {DASHBOARD_GROUP_ORDER.map((group) => {
-        const rows = ranked.filter((r) => r.group === group);
-        if (rows.length === 0) return null;
-        return <DashboardGroup key={group} group={group} rows={rows} />;
-      })}
+      <StatTiles stats={stats} />
+
+      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <ActionList items={actionList} />
+        <AiSignals returns={returns} />
+      </div>
+
+      <section
+        aria-labelledby="queue-title"
+        className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+          <div className="flex flex-col gap-0.5">
+            <h2
+              id="queue-title"
+              className="font-serif text-lg font-semibold tracking-tight"
+            >
+              Return queue
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Your highest-priority returns, at a glance.
+            </p>
+          </div>
+          <Link
+            to="/returns"
+            className="shrink-0 text-sm font-medium text-primary hover:underline"
+          >
+            View all returns →
+          </Link>
+        </header>
+        <ReturnsTable returns={returns} now={now} limit={QUEUE_GLANCE} />
+        {returns.length > queueShown && (
+          <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground sm:px-6">
+            Showing {queueShown} of {returns.length} returns
+          </p>
+        )}
+      </section>
     </div>
-  );
-}
-
-function DashboardGroup({
-  group,
-  rows,
-}: {
-  group: (typeof DASHBOARD_GROUP_ORDER)[number];
-  rows: RankedReturn[];
-}) {
-  const headingId = React.useId();
-  const { label, description } = DASHBOARD_GROUP_CONFIG[group];
-
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id={headingId} className="text-base font-semibold tracking-tight">
-          {label}
-          <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
-            {rows.length}
-          </span>
-        </h2>
-        <p className="hidden text-xs text-muted-foreground sm:block">
-          {description}
-        </p>
-      </div>
-
-      <ul className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        {rows.map((row) => (
-          <li
-            key={row.return.id}
-            className="border-b border-border last:border-b-0"
-          >
-            <DashboardRow row={row} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function DashboardRow({ row }: { row: RankedReturn }) {
-  const { return: taxReturn, openItemCount, lowConfidenceCount } = row;
-  const urgency = URGENCY_CONFIG[row.urgency];
-  const deadline = formatDeadline(row);
-
-  const summary = `Open ${taxReturn.client}, ${taxReturn.taxYear} Return. ${STAGE_LABEL[taxReturn.stage]}. ${urgency.label}. ${deadline.text}. ${openItemCount} Open Item${openItemCount === 1 ? "" : "s"}, ${lowConfidenceCount} low-Confidence Field${lowConfidenceCount === 1 ? "" : "s"}.`;
-
-  return (
-    <Link
-      to={`/returns/${taxReturn.id}`}
-      aria-label={summary}
-      className={cn(
-        "flex w-full items-center gap-4 px-5 py-4 text-left transition-colors",
-        "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset cursor-pointer",
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-sm font-semibold">
-            {taxReturn.client}
-          </span>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {taxReturn.taxYear}
-          </span>
-          <Badge variant="outline" className="text-muted-foreground">
-            {STAGE_LABEL[taxReturn.stage]}
-          </Badge>
-        </div>
-
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <Stat icon={ListChecks} count={openItemCount} noun="Open Item" />
-          <Stat
-            icon={ShieldAlert}
-            count={lowConfidenceCount}
-            noun="low-Confidence Field"
-          />
-          <span
-            className={cn(
-              "font-medium tabular-nums",
-              deadline.tone === "overdue" && "text-destructive",
-              deadline.tone === "soon" && "text-foreground",
-            )}
-          >
-            {deadline.text}
-          </span>
-        </div>
-      </div>
-
-      <Badge aria-hidden="true" className={urgency.className}>
-        <urgency.icon className={urgency.iconClassName} />
-        {urgency.label}
-      </Badge>
-
-      <ChevronRight
-        aria-hidden="true"
-        className="size-4 shrink-0 text-muted-foreground"
-      />
-    </Link>
-  );
-}
-
-/** One numeric row stat — icon, count, and a noun that pluralizes. Decorative; the
- * row's button carries the full spoken summary. */
-function Stat({
-  icon: Icon,
-  count,
-  noun,
-}: {
-  icon: LucideIcon;
-  count: number;
-  noun: string;
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex items-center gap-1.5 tabular-nums"
-    >
-      <Icon className="size-3.5" />
-      <span className="font-medium text-foreground">{count}</span>
-      <span>
-        {noun}
-        {count === 1 ? "" : "s"}
-      </span>
-    </span>
   );
 }

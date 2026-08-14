@@ -57,7 +57,7 @@ describe("RoleProvider", () => {
 
   it("restores a persisted active Role on the next boot", () => {
     localStorage.setItem(
-      "greenhouse:active-role",
+      "ledgerline:active-role",
       JSON.stringify({ userId: "user-dana", role: "preparer" }),
     );
     renderProbe();
@@ -67,7 +67,7 @@ describe("RoleProvider", () => {
   it("falls back to the default when the stored active Role is invalid", () => {
     // Dana doesn't hold a client Role — an incoherent active Role is ignored.
     localStorage.setItem(
-      "greenhouse:active-role",
+      "ledgerline:active-role",
       JSON.stringify({ userId: "user-dana", role: "individual-taxpayer" }),
     );
     renderProbe();

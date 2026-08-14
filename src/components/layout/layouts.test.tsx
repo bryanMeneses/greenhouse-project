@@ -39,7 +39,7 @@ describe("InternalLayout", () => {
     expect(screen.getByText("Return list goes here")).toBeInTheDocument();
   });
 
-  it("marks Dashboard as the current page on the landing route", () => {
+  it("marks Command center as the current page on the landing route", () => {
     renderAt(
       "/",
       <InternalLayout title="Dashboard">
@@ -47,13 +47,12 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(
+      screen.getByRole("link", { name: "Command center" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
-  it("marks the open Return current — not Dashboard — while drilled in", () => {
+  it("marks the open Return current — not Command center — while drilled in", () => {
     renderAt(
       "/returns/rtn-reyes-2024",
       <InternalLayout
@@ -67,20 +66,19 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
-    // Point 1 IA: the contextual tier owns "where you are", so Dashboard is no
-    // longer lit on a Return route — the open Return is the current destination,
-    // with its Areas nested beneath.
-    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    // Point 1 IA: the contextual tier owns "where you are", so Command center is
+    // no longer lit on a Return route — the open Return is the current
+    // destination, with its Areas nested beneath.
+    expect(
+      screen.getByRole("link", { name: "Command center" }),
+    ).not.toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("link", { name: "Reyes Household · 2024" }),
     ).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
   });
 
-  it("shows Review Queue as a disabled hint, not a link", () => {
+  it("no longer shows the placeholder Review Queue nav item", () => {
     renderAt(
       "/",
       <InternalLayout title="Dashboard">
@@ -88,13 +86,9 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
-    // Not built as a global surface yet — present, but not navigable.
-    expect(
-      screen.queryByRole("link", { name: /Review Queue/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByText("Review Queue").closest("[aria-disabled]"),
-    ).toHaveAttribute("aria-disabled", "true");
+    // The "Soon" placeholder was removed; the firm nav is Command center + Returns.
+    expect(screen.queryByText("Review Queue")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Returns" })).toBeInTheDocument();
   });
 
   it("has no accessibility violations", async () => {
@@ -130,7 +124,7 @@ describe("InternalLayout", () => {
 });
 
 describe("ClientLayout", () => {
-  it("shows the client nav — not the firm Dashboard or Review Queue", () => {
+  it("shows the client nav — not the firm Command center or Review Queue", () => {
     renderAt(
       "/",
       <ClientLayout title="Your return">
@@ -138,11 +132,11 @@ describe("ClientLayout", () => {
       </ClientLayout>,
     );
 
-    // A Client sees their own single entry — not the firm's Dashboard or the
-    // firm-only Review Queue hint.
+    // A Client sees their own single entry — not the firm's Command center or
+    // the firm-only Review Queue hint.
     expect(screen.getByRole("link", { name: "My Return" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Dashboard" }),
+      screen.queryByRole("link", { name: "Command center" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Review Queue")).not.toBeInTheDocument();
   });

@@ -1,23 +1,20 @@
-import {
-  createBrowserRouter,
-  Outlet,
-  redirect,
-  type RouteObject,
-} from "react-router";
+import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 
 import { HomePage } from "@/app/home-page";
+import { ReturnsIndexPage } from "@/features/returns/returns-index-page";
 import { ReturnReviewPage } from "@/features/returns/review/return-review-page";
 import { RoleProvider } from "@/app/providers";
 
 /**
  * The app's surfaces, all under the role-aware root (ADR-0005):
- * - `/`                    Role-branched home (Firm dashboard / Client status)
+ * - `/`                    Role-branched home (Firm Command Center / Client status)
+ * - `/returns`             the firm-wide Return roster (Firm only; Clients bounce home)
  * - `/returns/:returnId`   that Return's review (a Firm-only workspace)
  *
  * Routes are shared across Roles — what renders, and in which shell, depends on
- * who you're acting as, not the URL (the fork lives in the pages + layouts). A
- * bare `/returns` (no id) has no meaning of its own — the dashboard is the list —
- * so it bounces to `/` rather than 404-ing.
+ * who you're acting as, not the URL (the fork lives in the pages + layouts). The
+ * bare `/returns` roster is Firm-only; a Client has one Return and no roster, so
+ * `ReturnsIndexPage` redirects them home.
  */
 export const routes: RouteObject[] = [
   {
@@ -29,7 +26,7 @@ export const routes: RouteObject[] = [
     ),
     children: [
       { path: "/", element: <HomePage /> },
-      { path: "/returns", loader: () => redirect("/") },
+      { path: "/returns", element: <ReturnsIndexPage /> },
       { path: "/returns/:returnId", element: <ReturnReviewPage /> },
     ],
   },

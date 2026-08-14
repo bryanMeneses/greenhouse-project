@@ -221,7 +221,7 @@ export function sourceDocumentFile(id: string): SourceDocumentFile | undefined {
     mimeType: "application/pdf",
     sizeLabel: `${sizeKb} KB`,
     uploadedAt: `2024-02-${String(day).padStart(2, "0")}`,
-    cdnUrl: `https://cdn.greenhousetax.example/documents/${id}.pdf`,
+    cdnUrl: `https://cdn.ledgerline.example/documents/${id}.pdf`,
     pageCount,
   };
 }

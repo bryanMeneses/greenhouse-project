@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Design system derived from greenhouse.com (see docs/adr/0002).
+  Design system derived from greengrowthcpas.com (see docs/adr/0002).
   Light mode only — no dark tokens are shipped.
 */
 
@@ -56,7 +56,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Chart / data colors (Greenhouse green ramp) */
+  /* Chart / data colors (Green Growth CPAs green ramp) */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -65,7 +65,7 @@
 }
 
 :root {
-  --radius: 0.5rem; /* Greenhouse --size-2 */
+  --radius: 0.5rem; /* Green Growth CPAs --size-2 */
 
   /* Neutrals & surfaces */
   --background: #f5f5f5; /* whitesmoke */
@@ -119,7 +119,7 @@
   --sidebar-border: #dbe7e2;
   --sidebar-ring: #008561; /* brand-green focus ring, matches --ring */
 
-  /* Chart colors — Greenhouse green ramp */
+  /* Chart colors — Green Growth CPAs green ramp */
   --chart-1: #008561;
   --chart-2: #24a47f;
   --chart-3: #4cb398;

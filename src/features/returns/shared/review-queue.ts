@@ -16,3 +16,15 @@ export function reviewQueue(taxReturn: Return): Field[] {
         bandForConfidence(field.confidence) === "low",
     );
 }
+
+/**
+ * The low-Confidence Fields on a Return the Preparer still has to act on: those in
+ * the Review Queue not yet verified or locked (a verified or locked Field is done).
+ * The single definition the dashboard ranking, the Command Center stats, and the AI
+ * review signals all read, so a Return's "needs review" count never means two things.
+ */
+export function lowConfidenceAwaitingReview(taxReturn: Return): Field[] {
+  return reviewQueue(taxReturn).filter(
+    (field) => field.state !== "verified" && field.state !== "locked",
+  );
+}
