@@ -1,5 +1,6 @@
 import { Navigate } from "react-router";
 
+import { GreetingHeader } from "@/components/layout/greeting-header";
 import { InternalLayout } from "@/components/layout/internal-layout";
 import { ReturnsTable } from "@/features/dashboard/components/returns-table";
 import {
@@ -17,7 +18,7 @@ import { RETURNS, SEED_TODAY } from "@/mocks/returns";
  * and no roster, so this bounces them home.
  */
 export function ReturnsIndexPage() {
-  const { roleConfig } = useRole();
+  const { roleConfig, user } = useRole();
 
   if (roleConfig.family !== "firm") {
     return <Navigate to="/" replace />;
@@ -28,6 +29,8 @@ export function ReturnsIndexPage() {
   return (
     <InternalLayout title="Returns">
       <div className="flex flex-col gap-8">
+        <GreetingHeader name={user.name.split(" ")[0]} />
+
         {/* The page h1 ("Returns") lives in the shell header; this is the lead-in. */}
         <p className="text-sm text-muted-foreground">
           {RETURNS.length} return{RETURNS.length === 1 ? "" : "s"} in your book,

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { axe } from "vitest-axe";
 
@@ -75,7 +75,10 @@ describe("InternalLayout", () => {
     expect(
       screen.getByRole("link", { name: "Reyes Household · 2024" }),
     ).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
+    // This Return's own "Documents" Area, scoped to the contextual tier so it isn't
+    // confused with the firm-wide "Documents" pool in the global nav above it.
+    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
   });
 
   it("no longer shows the placeholder Review Queue nav item", () => {
@@ -118,7 +121,8 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
-    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
+    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 });

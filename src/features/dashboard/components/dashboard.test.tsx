@@ -74,7 +74,11 @@ describe("Dashboard", () => {
   it("greets the preparer and shows the four practice-wide stat tiles", () => {
     renderDashboard();
 
-    expect(screen.getByText(/Good morning, Jordan/)).toBeInTheDocument();
+    // The greeting salutation tracks the wall clock (morning/afternoon/evening/
+    // late-night), so assert it names the Preparer rather than a fixed time of day.
+    expect(
+      screen.getByRole("heading", { level: 2, name: /, Jordan\.$/ }),
+    ).toBeInTheDocument();
     for (const label of [
       "Active returns",
       "Open items",

@@ -5,6 +5,7 @@ import {
   dashboardStats,
   buildActionList,
 } from "@/features/dashboard/command-center";
+import { GreetingHeader } from "@/components/layout/greeting-header";
 import { StatTiles } from "./stat-tiles";
 import { ActionList } from "./action-list";
 import { AiSignals } from "./ai-signals";
@@ -17,13 +18,6 @@ type DashboardProps = {
   /** The Preparer's first name for the greeting; omitted in isolation/tests. */
   greetingName?: string;
 };
-
-function greeting(now: Date): string {
-  const hour = now.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
 
 /** How many rows the landing surfaces show before deferring to the full roster. */
 const QUEUE_GLANCE = 6;
@@ -42,25 +36,17 @@ export function Dashboard({ returns, now, greetingName }: DashboardProps) {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          {/* The page h1 lives in the shell header ("Command center"); this hero
-              greeting is the content's lead, so it's an h2 — one h1 per page. */}
-          <h2 className="font-serif text-2xl font-semibold tracking-tight">
-            {greeting(now)}
-            {greetingName ? `, ${greetingName}.` : "."}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Here's the work that needs you today.
-          </p>
-        </div>
-        <Link
-          to="/returns"
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          View all returns →
-        </Link>
-      </header>
+      <GreetingHeader
+        name={greetingName}
+        action={
+          <Link
+            to="/returns"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            View all returns →
+          </Link>
+        }
+      />
 
       <StatTiles stats={stats} />
 

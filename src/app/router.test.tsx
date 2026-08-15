@@ -113,6 +113,84 @@ describe("router", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the firm-wide Documents pool at /documents", () => {
+    renderAt("/documents");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Documents" }),
+    ).toBeInTheDocument();
+    // A sortable table pooling Source Documents across every Return, with clients named.
+    const table = screen.getByRole("table");
+    expect(
+      within(table).getByRole("columnheader", { name: /Client \/ Return/i }),
+    ).toBeInTheDocument();
+    // Each row deep-links into its Return, so the page (client A→Z) shows client links.
+    expect(within(table).getAllByRole("link").length).toBeGreaterThan(0);
+    // The pool runs past one page, so a pager is offered.
+    expect(
+      screen.getByRole("navigation", { name: /pagination/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("pages the Documents pool, and a focus deep link lands on the row's page", async () => {
+    const user = userEvent.setup();
+    renderAt("/documents");
+
+    // Default page shows the first slice; Reyes (client R) isn't on page 1.
+    expect(
+      screen.queryByRole("link", { name: /Reyes Household/i }),
+    ).not.toBeInTheDocument();
+
+    // Advancing pages reveals later clients.
+    await user.click(screen.getByRole("link", { name: /Go to page 3/i }));
+    expect(
+      screen.getAllByRole("link", { name: /Reyes Household/i }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("highlights the deep-linked row on /documents via the focus param", () => {
+    // The pooled row is a focus target: a `?focus=source-document:<returnId>:<docId>`
+    // deep link marks the matching row selected (the row-shaped end of the same
+    // navigation machinery a Field → Source Document Connection uses).
+    renderAt("/documents?focus=source-document:rtn-reyes-2024:doc-w2-acme");
+
+    const rows = screen
+      .getAllByRole("row")
+      .filter((row) => row.getAttribute("data-state") === "selected");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveAttribute(
+      "data-return-focus",
+      "rtn-reyes-2024:doc-w2-acme",
+    );
+  });
+
+  it("sorts the Documents pool when a column header is clicked", async () => {
+    const user = userEvent.setup();
+    renderAt("/documents");
+
+    const clientHeader = screen.getByRole("button", {
+      name: /Client \/ Return/i,
+    });
+    // Default is client ascending; one click flips it to descending.
+    await user.click(clientHeader);
+    expect(
+      screen.getByRole("columnheader", { name: /Client \/ Return/i }),
+    ).toHaveAttribute("aria-sort", "descending");
+  });
+
+  it("bounces a Client off /documents — there is no firm-wide pool for one Return", () => {
+    actingAs({ userId: "user-jordan", role: "individual-taxpayer" });
+    renderAt("/documents");
+
+    // Same redirect shape as the /returns roster: a Client lands on their home.
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Your return" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 1, name: "Documents" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders the client landing at / for a Client Role", () => {
     actingAs({ userId: "user-jordan", role: "individual-taxpayer" });
     renderAt("/");

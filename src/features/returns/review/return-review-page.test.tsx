@@ -46,7 +46,9 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
       screen.getByRole("heading", { name: "Return status" }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("link", { name: "Documents" }));
+    // This Return's Documents Area (contextual tier), not the firm-wide pool nav.
+    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    await user.click(areas.getByRole("link", { name: "Documents" }));
 
     expect(
       screen.queryByRole("heading", { name: "Return status" }),
@@ -77,9 +79,10 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
 
     const primary = within(screen.getByRole("navigation", { name: "Primary" }));
     expect(primary.getByRole("link", { name: "Overview" })).toBeInTheDocument();
-    expect(
-      primary.getByRole("link", { name: "Documents" }),
-    ).toBeInTheDocument();
+    // The contextual "Documents" Area — scoped, since the global nav now also has a
+    // firm-wide "Documents" link.
+    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(
       primary.getByRole("link", { name: "Requests & Activity" }),
     ).toBeInTheDocument();
