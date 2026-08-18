@@ -2,6 +2,7 @@ import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 
 import { HomePage } from "@/app/home-page";
 import { DocumentsIndexPage } from "@/features/documents/documents-index-page";
+import { MessagesIndexPage } from "@/features/messages/messages-index-page";
 import { ReturnsIndexPage } from "@/features/returns/returns-index-page";
 import { ReturnReviewPage } from "@/features/returns/review/return-review-page";
 import { RoleProvider } from "@/app/providers";
@@ -12,11 +13,12 @@ import { RoleProvider } from "@/app/providers";
  * - `/returns`             the firm-wide Return roster (Firm only; Clients bounce home)
  * - `/returns/:returnId`   that Return's review (a Firm-only workspace)
  * - `/documents`           the firm-wide pooled Source Documents table (Firm only)
+ * - `/messages`            the firm-wide pooled Messages inbox (Firm only)
  *
  * Routes are shared across Roles — what renders, and in which shell, depends on
  * who you're acting as, not the URL (the fork lives in the pages + layouts). The
- * bare `/returns` roster and `/documents` pool are Firm-only; a Client has one
- * Return and no firm-wide list, so those pages redirect them home.
+ * bare `/returns` roster, `/documents` pool, and `/messages` inbox are Firm-only; a
+ * Client has one Return and no firm-wide list, so those pages redirect them home.
  */
 export const routes: RouteObject[] = [
   {
@@ -31,6 +33,7 @@ export const routes: RouteObject[] = [
       { path: "/returns", element: <ReturnsIndexPage /> },
       { path: "/returns/:returnId", element: <ReturnReviewPage /> },
       { path: "/documents", element: <DocumentsIndexPage /> },
+      { path: "/messages", element: <MessagesIndexPage /> },
     ],
   },
 ];

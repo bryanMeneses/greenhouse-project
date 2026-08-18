@@ -132,6 +132,13 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Reserve the vertical scrollbar's width whether or not a page needs to scroll,
+     so the centered workspace column (AppShell's `mx-auto max-w-6xl`) never shifts
+     a few px between a tall page (e.g. /returns) and a short one (e.g. /messages). */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }

@@ -1,10 +1,15 @@
 /**
  * Seed Thread data (simulated, ADR-0005 + ADR-0008). All fake collaboration data
  * lives here; the domain types and pure logic stay in
- * `@/features/returns/shared/collaboration`. Threads anchor to the existing Nguyen
- * Return — the one reachable behind both the Preparer review and the Client view
- * (via the 05 role switch) — so the audience boundary is demonstrable on one
+ * `@/features/returns/shared/collaboration`. The original 3 Threads anchor to the
+ * Nguyen Return — the one reachable behind both the Preparer review and the Client
+ * view (via the 05 role switch) — so the audience boundary is demonstrable on one
  * Return. No new Return is seeded (#19).
+ *
+ * A further handful of Threads (below) anchor to 3 other roster Returns, added for
+ * the firm-wide pooled Messages inbox (#23) — a pool over a single Return's Threads
+ * reads as "one client's conversations", not a firm-wide triage view, so the pool
+ * needs Threads spread across clients to demonstrate its reason for existing.
  *
  * Messages are timestamped against SEED_TODAY, never the wall clock, so the
  * ordering renders identically on every load.
@@ -144,8 +149,150 @@ const returnThread: Thread = {
   ],
 };
 
+// ─── Cross-Return Threads (#23) — spreading the pool across other clients ──
+
+const CLIENT_REYES = {
+  role: "individual-taxpayer" as const,
+  name: "Reyes Household",
+};
+const CLIENT_OWENS = { role: "business-owner" as const, name: "Owens Retail" };
+
+// Thread 4: a Return-level conversation on the Reyes Household Return.
+const T_REYES_RETURN = "thread-reyes-return";
+const reyesReturnThread: Thread = {
+  id: T_REYES_RETURN,
+  returnId: "rtn-reyes-2024",
+  subject: { kind: "return" },
+  title: "Kicking off your 2024 review",
+  messages: [
+    message(
+      T_REYES_RETURN,
+      1,
+      PREPARER,
+      "client-visible",
+      "Started reviewing your 2024 return — I'll flag anything I need right here as we go.",
+      seedTime(5),
+    ),
+    message(
+      T_REYES_RETURN,
+      2,
+      CLIENT_REYES,
+      "client-visible",
+      "Sounds good, thank you!",
+      seedTime(4, 10),
+    ),
+  ],
+};
+
+// Thread 5: a question on the Reyes W-2 (shares the same seed Document as Nguyen's —
+// the same documentId can back a Thread on more than one Return, per #21's pooling).
+const T_REYES_W2 = "thread-reyes-w2";
+const reyesW2Thread: Thread = {
+  id: T_REYES_W2,
+  returnId: "rtn-reyes-2024",
+  subject: {
+    kind: "source-document",
+    documentId: "doc-w2-acme",
+    title: "W-2 (Acme Corp)",
+  },
+  title: "W-2 wages — confirming Box 1",
+  messages: [
+    message(
+      T_REYES_W2,
+      1,
+      PREPARER,
+      "client-visible",
+      "Your Acme Corp W-2 shows $84,250 in Box 1 — can you confirm this is the final copy?",
+      seedTime(7),
+    ),
+    message(
+      T_REYES_W2,
+      2,
+      CLIENT_REYES,
+      "client-visible",
+      "Yes, that's the final one.",
+      seedTime(6, 11),
+    ),
+  ],
+};
+
+// Thread 6: a Request (sign the engagement letter) on the Owens Retail Return —
+// a Client-owned Open Item, so the pooled inbox shows a "Waiting on client" row.
+const T_OWENS_ENGAGEMENT = "thread-owens-engagement";
+const owensEngagementThread: Thread = {
+  id: T_OWENS_ENGAGEMENT,
+  returnId: "rtn-owens-2024",
+  subject: { kind: "open-item", openItemId: "rtn-owens-2024-client-0" },
+  title: "Engagement letter — quick signature needed",
+  messages: [
+    message(
+      T_OWENS_ENGAGEMENT,
+      1,
+      PREPARER,
+      "client-visible",
+      "Before we can start your 2024 return we need your signed engagement letter — you can sign right here.",
+      seedTime(3),
+    ),
+    message(
+      T_OWENS_ENGAGEMENT,
+      2,
+      CLIENT_OWENS,
+      "client-visible",
+      "On it — pulling it up now.",
+      seedTime(3, 10),
+    ),
+    // Internal contingency note, same as the Nguyen 1098 Thread's pattern. The
+    // Client's reply above doesn't flip the Open Item's owner — only the Preparer
+    // verifying a completed signature does that (ADR-0008: no auto-close on say-so).
+    message(
+      T_OWENS_ENGAGEMENT,
+      3,
+      PREPARER,
+      "internal",
+      "Flag if this isn't back within a week — hold off starting prep until then.",
+      seedTime(3, 11),
+    ),
+  ],
+};
+
+// Thread 7: an entirely Internal note on the Okafor LLC Return — a Preparer-owned
+// Open Item, so both its Messages and its "Next action" owner are firm-only.
+const T_OKAFOR_WAGES = "thread-okafor-wages";
+const okaforWagesThread: Thread = {
+  id: T_OKAFOR_WAGES,
+  returnId: "rtn-okafor-2024",
+  subject: { kind: "open-item", openItemId: "rtn-okafor-2024-prep-0" },
+  title: "S-corp officer wages — internal check",
+  messages: [
+    message(
+      T_OKAFOR_WAGES,
+      1,
+      PREPARER,
+      "internal",
+      "Cross-checking officer wages against the K-1 before we finalize — will confirm with the client if the split looks off.",
+      seedTime(2),
+    ),
+    message(
+      T_OKAFOR_WAGES,
+      2,
+      PREPARER,
+      "internal",
+      "Numbers reconcile; no follow-up needed.",
+      seedTime(1, 14),
+    ),
+  ],
+};
+
 /** All seed Threads. The single source of truth for collaboration data. */
-export const THREADS: Thread[] = [w2Thread, request1098Thread, returnThread];
+export const THREADS: Thread[] = [
+  w2Thread,
+  request1098Thread,
+  returnThread,
+  reyesReturnThread,
+  reyesW2Thread,
+  owensEngagementThread,
+  okaforWagesThread,
+];
 
 /** The Threads that live on a given Return, in display order. */
 export function getThreadsForReturn(returnId: string): Thread[] {

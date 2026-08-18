@@ -35,6 +35,27 @@ export type Subject =
 /** The Subject kinds, for switch exhaustiveness and labels. */
 export type SubjectKind = Subject["kind"];
 
+/**
+ * The concrete thing a Subject names — a Return reads as "the Return", a Source
+ * Document by its title, and an open-item Subject resolves its label from the
+ * Return's Open Items so it names the actual Request, never an opaque id. The one
+ * implementation both the per-Return inbox (`thread.tsx`) and the firm-wide pooled
+ * Messages inbox (`pooled-threads.ts`) read through, so a Subject names the same
+ * thing everywhere it's shown.
+ */
+export function subjectLabel(subject: Subject, openItems: OpenItem[]): string {
+  switch (subject.kind) {
+    case "return":
+      return "the Return";
+    case "source-document":
+      return subject.title;
+    case "open-item": {
+      const item = openItems.find((i) => i.id === subject.openItemId);
+      return item?.label ?? "Request";
+    }
+  }
+}
+
 // ─── Message ───────────────────────────────────────────────────────────────
 
 /** A single post within a Thread, authored by a User acting as a Role. */

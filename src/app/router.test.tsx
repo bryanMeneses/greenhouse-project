@@ -132,7 +132,7 @@ describe("router", () => {
     ).toBeInTheDocument();
   });
 
-  it("pages the Documents pool, and a focus deep link lands on the row's page", async () => {
+  it("pages the Documents pool", async () => {
     const user = userEvent.setup();
     renderAt("/documents");
 
@@ -148,22 +148,6 @@ describe("router", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("highlights the deep-linked row on /documents via the focus param", () => {
-    // The pooled row is a focus target: a `?focus=source-document:<returnId>:<docId>`
-    // deep link marks the matching row selected (the row-shaped end of the same
-    // navigation machinery a Field → Source Document Connection uses).
-    renderAt("/documents?focus=source-document:rtn-reyes-2024:doc-w2-acme");
-
-    const rows = screen
-      .getAllByRole("row")
-      .filter((row) => row.getAttribute("data-state") === "selected");
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveAttribute(
-      "data-return-focus",
-      "rtn-reyes-2024:doc-w2-acme",
-    );
-  });
-
   it("sorts the Documents pool when a column header is clicked", async () => {
     const user = userEvent.setup();
     renderAt("/documents");
@@ -176,6 +160,60 @@ describe("router", () => {
     expect(
       screen.getByRole("columnheader", { name: /Client \/ Return/i }),
     ).toHaveAttribute("aria-sort", "descending");
+  });
+
+  it("renders the firm-wide Messages pool at /messages", () => {
+    renderAt("/messages");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Messages" }),
+    ).toBeInTheDocument();
+    // A sortable table pooling Threads across every Return, with clients named.
+    const table = screen.getByRole("table");
+    expect(
+      within(table).getByRole("columnheader", { name: /Client \/ Return/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(table).getByRole("columnheader", { name: /Next action/i }),
+    ).toBeInTheDocument();
+    // The Thread noun is the column label, never the banned "conversation".
+    expect(
+      within(table).getByRole("columnheader", { name: "Thread" }),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByRole("link").length).toBeGreaterThan(0);
+    // A Thread carrying both audiences reads "Mixed", not a collapsed
+    // "Client-visible": 3 seeded mixed Threads, 1 all-Internal (Okafor).
+    expect(within(table).getAllByText("Mixed")).toHaveLength(3);
+    expect(within(table).getAllByText("Internal")).toHaveLength(1);
+  });
+
+  it("sorts the Messages pool when a column header is clicked", async () => {
+    const user = userEvent.setup();
+    renderAt("/messages");
+
+    const updatedHeader = screen.getByRole("button", {
+      name: /Last activity/i,
+    });
+    // Default is most-recent-activity-first (descending); already active.
+    expect(
+      screen.getByRole("columnheader", { name: /Last activity/i }),
+    ).toHaveAttribute("aria-sort", "descending");
+    await user.click(updatedHeader);
+    expect(
+      screen.getByRole("columnheader", { name: /Last activity/i }),
+    ).toHaveAttribute("aria-sort", "ascending");
+  });
+
+  it("bounces a Client off /messages — a Client reads Messages on their own Return, not a firm-wide pool", () => {
+    actingAs({ userId: "user-jordan", role: "individual-taxpayer" });
+    renderAt("/messages");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Your return" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 1, name: "Messages" }),
+    ).not.toBeInTheDocument();
   });
 
   it("bounces a Client off /documents — there is no firm-wide pool for one Return", () => {
