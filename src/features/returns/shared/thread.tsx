@@ -1,14 +1,5 @@
 import * as React from "react";
-import {
-  FileText,
-  MessagesSquare,
-  ClipboardList,
-  Lock,
-  Eye,
-  Send,
-  Link2,
-  MessageSquarePlus,
-} from "lucide-react";
+import { Send, Link2, MessageSquarePlus, Eye, Lock } from "lucide-react";
 
 import { cn, formatRelativeToSeed } from "@/lib/utils";
 import { SEED_TODAY } from "@/mocks/returns";
@@ -28,78 +19,26 @@ import {
   threadHasAudience,
   composableAudiences,
   defaultComposeAudience,
+  subjectLabel,
   type Message,
   type MessageAudience,
   type Subject,
-  type SubjectKind,
   type Thread as ThreadModel,
   type Viewer,
 } from "./collaboration";
-
-// ─── Presentational config ─────────────────────────────────────────────────
-
-/** How each Subject kind reads — the label + icon for the "Linked to" line. */
-const SUBJECT_KIND_CONFIG: Record<
-  SubjectKind,
-  { label: string; icon: typeof FileText }
-> = {
-  return: { label: "Return", icon: MessagesSquare },
-  "source-document": { label: "Document", icon: FileText },
-  "open-item": { label: "Request", icon: ClipboardList },
-};
-
-/**
- * The visible treatment for each Message audience — the anti-leak affordance
- * (ADR-0008). Internal is warning-tinted/locked; Client-visible is the
- * boundary-crossing choice, tinted with the primary token and spelled out plainly.
- */
-const AUDIENCE_CONFIG: Record<
-  MessageAudience,
-  {
-    label: string;
-    icon: typeof Lock;
-    /** Plain-language statement of who will see it, shown at compose time. */
-    composeHint: string;
-    /** Tint for the selected compose state + a Message's own bubble/chip. */
-    accentClassName: string;
-    badgeClassName: string;
-  }
-> = {
-  internal: {
-    label: "Internal",
-    icon: Lock,
-    composeHint: "Only your firm will see this.",
-    accentClassName: "border-warning/50 bg-warning/5",
-    badgeClassName: "bg-warning/15 text-warning border-warning/30",
-  },
-  "client-visible": {
-    label: "Client-visible",
-    icon: Eye,
-    composeHint: "The client will see this.",
-    accentClassName: "border-primary/50 bg-primary/5",
-    badgeClassName: "bg-primary/10 text-primary border-primary/20",
-  },
-};
+import { AUDIENCE_CONFIG, SUBJECT_KIND_CONFIG } from "./collaboration-presentation";
 
 // ─── Subject + avatar helpers ────────────────────────────────────────────────
 
 /**
- * How a Thread's Subject reads on screen — the kind label + the concrete thing it
- * links to. An open-item Subject resolves its label from the Return's Open Items,
- * so the "Linked to" line names the actual Request, not an opaque id.
+ * How a Thread's Subject reads on screen — the kind label + icon plus the concrete
+ * thing it links to (`subjectLabel`, shared with the pooled Messages inbox).
  */
 function describeSubject(subject: Subject, openItems: OpenItem[]) {
-  const kind = SUBJECT_KIND_CONFIG[subject.kind];
-  switch (subject.kind) {
-    case "return":
-      return { ...kind, detail: "This return" };
-    case "source-document":
-      return { ...kind, detail: subject.title };
-    case "open-item": {
-      const item = openItems.find((i) => i.id === subject.openItemId);
-      return { ...kind, detail: item?.label ?? "Request" };
-    }
-  }
+  return {
+    ...SUBJECT_KIND_CONFIG[subject.kind],
+    detail: subjectLabel(subject, openItems),
+  };
 }
 
 /** Two-letter initials from a display name, for the message avatar. */

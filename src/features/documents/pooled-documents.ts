@@ -13,12 +13,10 @@ import type { Return } from "@/features/returns/shared/returns";
  * Why keyed by (Return, Document): the seed catalog is shared, so the same
  * `documentId` (e.g. a W-2) appears on many Returns. On the firm side each Return's
  * copy is its own row — the Reyes W-2 and the Nguyen W-2 are distinct uploads — so a
- * plain documentId can't identify a row. `rowId` carries both, which is also the
- * focus id a `?focus=…` deep link highlights — the row-shaped end of the same
- * URL-focus navigation machinery (ADR-0009); see the table's `data-return-focus`.
+ * plain documentId can't identify a row; `rowId` carries both.
  */
 export type PooledDocument = {
-  /** `${returnId}:${documentId}` — unique per row, and the row's focus target id. */
+  /** `${returnId}:${documentId}` — unique per row (the React key + sort tiebreak). */
   rowId: string;
   returnId: string;
   client: string;
@@ -57,61 +55,4 @@ export function collectFirmDocuments(returns: Return[]): PooledDocument[] {
     }
   }
   return rows;
-}
-
-/** The sortable columns of the pooled Documents table. */
-export type DocumentSortKey =
-  "client" | "document" | "kind" | "uploaded" | "fields";
-
-export type SortDirection = "asc" | "desc";
-
-export type DocumentSort = {
-  key: DocumentSortKey;
-  direction: SortDirection;
-};
-
-/** Client first, then most recently uploaded — a firm reads its book by client. */
-export const DEFAULT_DOCUMENT_SORT: DocumentSort = {
-  key: "client",
-  direction: "asc",
-};
-
-/** The per-column primary comparison; ties always fall through to `rowId` for a stable order. */
-function compareBy(
-  key: DocumentSortKey,
-  a: PooledDocument,
-  b: PooledDocument,
-): number {
-  switch (key) {
-    case "client":
-      return a.client.localeCompare(b.client);
-    case "document":
-      return a.title.localeCompare(b.title);
-    case "kind":
-      return a.kind.localeCompare(b.kind);
-    case "uploaded":
-      // ISO dates sort lexicographically; a missing date is "" so it sorts first
-      // ascending / last descending. (Every seed Document has one, so this is a
-      // just-in-case ordering, not a case the current data hits.)
-      return a.uploadedAt.localeCompare(b.uploadedAt);
-    case "fields":
-      return a.fieldLabels.length - b.fieldLabels.length;
-  }
-}
-
-/**
- * Sort a copy of the pool by one column. The comparison is total: after the column
- * key it always tiebreaks on `rowId`, so the order is deterministic (no rows ever
- * "swap places" on re-sort) and tests stay stable.
- */
-export function sortPooledDocuments(
-  rows: PooledDocument[],
-  sort: DocumentSort,
-): PooledDocument[] {
-  const factor = sort.direction === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const primary = compareBy(sort.key, a, b);
-    if (primary !== 0) return primary * factor;
-    return a.rowId.localeCompare(b.rowId);
-  });
 }

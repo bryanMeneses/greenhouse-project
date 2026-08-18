@@ -60,18 +60,21 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
     renderPage();
 
     const primary = () => screen.getByRole("navigation", { name: "Primary" });
+    // This Return's Messages Area (contextual tier), not the firm-wide pool nav.
+    const areas = () => within(screen.getByRole("list", { name: /Areas$/i }));
     expect(
       within(primary()).getByRole("link", { name: "Overview" }),
     ).toHaveAttribute("aria-current", "page");
 
-    await user.click(within(primary()).getByRole("link", { name: "Messages" }));
+    await user.click(areas().getByRole("link", { name: "Messages" }));
 
     expect(
       within(primary()).getByRole("link", { name: "Overview" }),
     ).not.toHaveAttribute("aria-current", "page");
-    expect(
-      within(primary()).getByRole("link", { name: "Messages" }),
-    ).toHaveAttribute("aria-current", "page");
+    expect(areas().getByRole("link", { name: "Messages" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   it("lists the four firm Areas in the contextual tier, with the activity Area renamed", () => {
@@ -79,14 +82,14 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
 
     const primary = within(screen.getByRole("navigation", { name: "Primary" }));
     expect(primary.getByRole("link", { name: "Overview" })).toBeInTheDocument();
-    // The contextual "Documents" Area — scoped, since the global nav now also has a
-    // firm-wide "Documents" link.
+    // The contextual "Documents"/"Messages" Areas — scoped, since the global nav
+    // now also has firm-wide "Documents" and "Messages" links.
     const areas = within(screen.getByRole("list", { name: /Areas$/i }));
     expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(
       primary.getByRole("link", { name: "Requests & Activity" }),
     ).toBeInTheDocument();
-    expect(primary.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+    expect(areas.getByRole("link", { name: "Messages" })).toBeInTheDocument();
     // The old label is gone.
     expect(
       primary.queryByRole("link", { name: "Questions & Requests" }),
@@ -99,11 +102,11 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
 
     await user.click(screen.getByRole("button", { name: /Messages/ }));
 
-    expect(
-      within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
-        "link",
-        { name: "Messages" },
-      ),
-    ).toHaveAttribute("aria-current", "page");
+    // This Return's Messages Area (contextual tier), not the firm-wide pool nav.
+    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    expect(areas.getByRole("link", { name: "Messages" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 });
