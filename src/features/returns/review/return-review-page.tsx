@@ -4,7 +4,9 @@ import { ArrowLeft } from "lucide-react";
 import { ClientLayout } from "@/components/layout/client-layout";
 import { InternalLayout } from "@/components/layout/internal-layout";
 import { ReturnWorkspace } from "@/features/returns/review/components/return-workspace";
+import { Trail } from "@/features/returns/shared/trail";
 import { getReturn } from "@/mocks/returns";
+import { getThreadsForReturn } from "@/mocks/collaboration";
 import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +71,8 @@ export function ReturnReviewPage() {
     );
   }
 
+  const threads = getThreadsForReturn(taxReturn.id);
+
   return (
     <InternalLayout
       title={`${taxReturn.client} · ${taxReturn.taxYear} Return`}
@@ -76,6 +80,14 @@ export function ReturnReviewPage() {
         label: `${taxReturn.client} · ${taxReturn.taxYear}`,
         basePath: `/returns/${taxReturn.id}`,
       }}
+      trail={
+        <Trail
+          taxReturn={taxReturn}
+          viewerFamily={roleConfig.family}
+          threads={threads}
+          singleLine
+        />
+      }
     >
       <div className="flex flex-col gap-6">
         {/* key resets the page's tab + local state when switching Returns. */}
@@ -84,6 +96,7 @@ export function ReturnReviewPage() {
           taxReturn={taxReturn}
           viewerFamily={roleConfig.family}
           viewer={{ role, name: user.name }}
+          threads={threads}
         />
       </div>
     </InternalLayout>

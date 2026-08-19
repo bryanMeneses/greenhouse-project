@@ -38,10 +38,17 @@ function MessagesHint() {
 type ClientLayoutProps = {
   title: string;
   firstRun?: boolean;
+  /** The orientation Trail for the Client's Return, pinned to the fixed header. */
+  trail?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function ClientLayout({ title, firstRun, children }: ClientLayoutProps) {
+export function ClientLayout({
+  title,
+  firstRun,
+  trail,
+  children,
+}: ClientLayoutProps) {
   return (
     <AppShell
       title={title}
@@ -49,6 +56,7 @@ export function ClientLayout({ title, firstRun, children }: ClientLayoutProps) {
       returnContext={CLIENT_RETURN_CONTEXT}
       contextualNav={!firstRun}
       navExtra={firstRun ? <MessagesHint /> : undefined}
+      trail={trail}
     >
       {children}
     </AppShell>

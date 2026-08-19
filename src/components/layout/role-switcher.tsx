@@ -54,9 +54,11 @@ export function RoleSwitcher() {
         <Button
           variant="ghost"
           aria-label={`Switch role. Acting as ${user.name}, ${roleConfig.label}.`}
-          className="h-auto justify-start gap-2 p-1 pl-2 text-left focus-visible:ring-offset-card"
+          className="h-auto shrink-0 justify-start gap-2 p-1 text-left focus-visible:ring-offset-card"
         >
-          <div className="leading-tight">
+          {/* On narrow viewports the identity collapses to the avatar so the
+              fixed header's title/Trail slot keeps room to render. */}
+          <div className="hidden leading-tight sm:block">
             <div className="text-sm font-medium">{user.name}</div>
             <div className="text-xs text-muted-foreground">
               {roleConfig.label} · {FAMILY_LABEL[roleConfig.family]}
@@ -70,7 +72,7 @@ export function RoleSwitcher() {
           </span>
           <ChevronsUpDown
             aria-hidden="true"
-            className="size-4 text-muted-foreground"
+            className="hidden size-4 text-muted-foreground sm:block"
           />
         </Button>
       </DropdownMenuTrigger>

@@ -38,6 +38,23 @@ describe("Firm Provenance back behavior", () => {
     await router.navigate(-1);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("hides the header Back on a fresh deep link until a step is taken", async () => {
+    const user = userEvent.setup();
+    const router = createMemoryRouter(routes, {
+      initialEntries: ["/returns/rtn-reyes-2024"],
+    });
+    render(<RouterProvider router={router} />);
+
+    // A fresh deep link has no prior in-app step, so there is no Back control.
+    expect(
+      screen.queryByRole("button", { name: "Go back" }),
+    ).not.toBeInTheDocument();
+
+    // Switching Areas pushes a step, revealing the Back arrow.
+    await user.click(screen.getByRole("link", { name: "Documents" }));
+    expect(screen.getByRole("button", { name: "Go back" })).toBeInTheDocument();
+  });
 });
 
 describe("Client connective navigation", () => {

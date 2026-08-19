@@ -8,6 +8,7 @@ import { getSourceDocument, sourceDocumentFile } from "@/mocks/documents";
 import { threadsVisibleTo } from "./collaboration";
 import { collectSourceDocuments, connectionsFor } from "./connections";
 import { ConnectionLink } from "./connection-link";
+import { AreaSection } from "./area-section";
 import { useReturnView } from "@/hooks/use-return-view";
 import { areasFor } from "./areas";
 import { cn } from "@/lib/utils";
@@ -66,37 +67,18 @@ export function DocumentsSection({
   );
 
   return (
-    <section
-      aria-labelledby="documents-title"
-      className="flex w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-    >
-      <header className="flex items-start justify-between gap-4 border-b border-border bg-card px-5 py-5 sm:px-6">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <FileText aria-hidden="true" className="size-4" />
-            </span>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Uploaded files
-            </p>
-          </div>
-          <h2
-            id="documents-title"
-            className="font-serif text-xl font-semibold tracking-tight"
-          >
-            Documents
-          </h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            The files uploaded to this return. Select one to see its details and
-            the Fields and Threads it feeds.
-          </p>
-        </div>
-        <Button type="button" size="sm" className="shrink-0">
+    <AreaSection
+      eyebrow="Uploaded files"
+      icon={FileText}
+      title="Documents"
+      description="The files uploaded to this return. Select one to see its details and the Fields and Threads it feeds."
+      action={
+        <Button type="button" size="sm">
           <Upload aria-hidden="true" />
           Upload document
         </Button>
-      </header>
-
+      }
+    >
       <div className="grid min-w-0 lg:grid-cols-[minmax(16rem,0.9fr)_minmax(16rem,1.1fr)]">
         {/* The file list — an uploads library, not a review hierarchy. */}
         <div className="flex min-w-0 flex-col border-b border-border lg:border-r lg:border-b-0">
@@ -164,7 +146,7 @@ export function DocumentsSection({
           </div>
         )}
       </div>
-    </section>
+    </AreaSection>
   );
 }
 

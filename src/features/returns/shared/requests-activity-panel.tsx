@@ -15,6 +15,7 @@ import {
 } from "./collaboration";
 import { connectionsFor, type Connection } from "./connections";
 import { ConnectionLink } from "./connection-link";
+import { AreaSection } from "./area-section";
 
 type RequestsActivityPanelProps = {
   taxReturn: Return;
@@ -39,7 +40,6 @@ export function RequestsActivityPanel({
   viewerFamily,
   onSelectThread,
 }: RequestsActivityPanelProps) {
-  const headingId = React.useId();
   const requests = openRequests(taxReturn.openItems);
   const activity = recentActivity(threads, viewerFamily);
 
@@ -50,22 +50,12 @@ export function RequestsActivityPanel({
   }, [threads]);
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col rounded-lg border border-border bg-card shadow-sm"
+    <AreaSection
+      eyebrow="Open items and activity"
+      icon={ClipboardList}
+      title="Requests & Activity"
+      description="Outstanding requests first, then recent messages — for this return."
     >
-      <div className="border-b border-border px-5 py-3">
-        <h2
-          id={headingId}
-          className="flex items-center gap-2 text-base font-semibold tracking-tight"
-        >
-          <ClipboardList aria-hidden="true" className="size-4 text-primary" />
-          Requests &amp; Activity
-        </h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Outstanding requests first, then recent messages — for this return.
-        </p>
-      </div>
 
       {/* Open Requests — lead with the outstanding actions, by urgency. */}
       <div className="flex flex-col gap-2 px-5 py-4">
@@ -126,7 +116,7 @@ export function RequestsActivityPanel({
           </ul>
         )}
       </div>
-    </section>
+    </AreaSection>
   );
 }
 

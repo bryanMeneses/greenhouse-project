@@ -6,20 +6,23 @@ import { ReturnHeader } from "@/features/returns/review/components/return-header
 import { PreparerStatusBand } from "@/features/returns/shared/preparer-status-band";
 import {
   openRequests,
+  type Thread,
   type Viewer,
 } from "@/features/returns/shared/collaboration";
-import { getThreadsForReturn } from "@/mocks/collaboration";
 import type { Return } from "@/features/returns/shared/returns";
 import { FIRM_AREAS } from "@/features/returns/shared/areas";
 import { ReturnAreaBody } from "@/features/returns/shared/area-body";
+import { useCanGoBack } from "@/hooks/use-can-go-back";
 import { useReturnView } from "@/hooks/use-return-view";
-import { Trail } from "@/features/returns/shared/trail";
 import type { RoleFamily } from "@/lib/roles";
 
 type ReturnWorkspaceProps = {
   taxReturn: Return;
   viewerFamily: RoleFamily;
   viewer: Viewer;
+  /** The Return's Threads, computed once by the page so the same set feeds both
+   *  the header Trail and the Area bodies below. */
+  threads: Thread[];
 };
 
 /** The Firm Return's Areas, composed from the existing review and collaboration surfaces. */
@@ -27,15 +30,16 @@ export function ReturnWorkspace({
   taxReturn,
   viewerFamily,
   viewer,
+  threads,
 }: ReturnWorkspaceProps) {
   const navigate = useNavigate();
+  const canGoBack = useCanGoBack();
   const { area, setView } = useReturnView({
     areas: FIRM_AREAS.map((candidate) => candidate.id),
   });
   // The review working copy lives at the workspace level, above the Areas, so a
   // Preparer's in-progress corrections survive switching Areas and back (#5).
   const [reviewedReturn, dispatch] = React.useReducer(returnReducer, taxReturn);
-  const threads = getThreadsForReturn(taxReturn.id);
   const collabCount = openRequests(taxReturn.openItems).length;
 
   const openMessages = () => {
@@ -48,12 +52,7 @@ export function ReturnWorkspace({
         taxReturn={taxReturn}
         messageCount={collabCount}
         onOpenMessages={openMessages}
-        onBack={() => navigate(-1)}
-      />
-      <Trail
-        taxReturn={taxReturn}
-        viewerFamily={viewerFamily}
-        threads={threads}
+        onBack={canGoBack ? () => navigate(-1) : undefined}
       />
 
       {/* The active Area's body. Messages is the one Area force-mounted: it is the

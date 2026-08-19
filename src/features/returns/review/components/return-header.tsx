@@ -57,9 +57,9 @@ export function ReturnHeader({
               {taxReturn.returnNumber}
             </Badge>
           </div>
-          <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+          <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
             {taxReturn.client}
-          </h1>
+          </h2>
           <p className="text-sm text-muted-foreground">
             {taxReturn.returnType} · Tax year {taxReturn.taxYear} · Owned by{" "}
             {taxReturn.ownerName}
