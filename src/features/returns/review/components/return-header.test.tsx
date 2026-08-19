@@ -12,7 +12,7 @@ describe("ReturnHeader", () => {
     render(<ReturnHeader taxReturn={NGUYEN} />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Nguyen Family" }),
+      screen.getByRole("heading", { level: 2, name: "Nguyen Family" }),
     ).toBeInTheDocument();
     expect(screen.getByText("RET-2024-011")).toBeInTheDocument();
     expect(screen.getByText(/2024 INDIVIDUAL Return/i)).toBeInTheDocument();

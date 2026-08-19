@@ -15,6 +15,7 @@ import type {
 import { threadHasAudience } from "./collaboration";
 import { ThreadList, ThreadDetail, EmptyConversation } from "./thread";
 import { connectionsFor } from "./connections";
+import { AreaSection } from "./area-section";
 import { useReturnView } from "@/hooks/use-return-view";
 
 type CollaborationSectionProps = {
@@ -101,37 +102,27 @@ export function CollaborationSection({
     : [];
 
   return (
-    <section aria-label="Collaboration" className="flex flex-col gap-4">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <MessagesSquare aria-hidden="true" className="size-4" />
-            </span>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Collaboration
-            </p>
-          </div>
-          <h2 className="font-serif text-xl font-semibold tracking-tight">
-            Messages
-          </h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            {isFirm
-              ? "Questions and notes between you and your client, each attached to the work it belongs to."
-              : "Questions and updates from your preparer about this return."}
-          </p>
-        </div>
-        <Button type="button" size="sm" className="shrink-0">
+    <AreaSection
+      eyebrow="Collaboration"
+      icon={MessagesSquare}
+      title="Messages"
+      description={
+        isFirm
+          ? "Questions and notes between you and your client, each attached to the work it belongs to."
+          : "Questions and updates from your preparer about this return."
+      }
+      action={
+        <Button type="button" size="sm">
           <MessageSquarePlus aria-hidden="true" />
           New conversation
         </Button>
-      </header>
-
+      }
+    >
       {/* Inbox + open conversation share one box, the same for firm and client:
           side by side on wide screens, the inbox stacking on top when it collapses
           to a single column. On wide screens the box is a fixed frame, so the inbox
           and the conversation each scroll within it rather than growing the page. */}
-      <div className="grid divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:h-146 lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
+      <div className="grid divide-y divide-border lg:h-146 lg:grid-cols-[22rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
         <ThreadList
           embedded
           threads={displayThreads}
@@ -158,6 +149,6 @@ export function CollaborationSection({
           <EmptyConversation />
         )}
       </div>
-    </section>
+    </AreaSection>
   );
 }

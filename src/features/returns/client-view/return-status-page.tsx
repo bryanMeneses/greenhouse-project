@@ -12,6 +12,7 @@ import { ReturnHeader } from "@/features/returns/review/components/return-header
 import type { ClientOnboardingItem } from "@/features/returns/client-view/onboarding";
 import { CLIENT_AREAS } from "@/features/returns/shared/areas";
 import { ReturnAreaBody } from "@/features/returns/shared/area-body";
+import { useCanGoBack } from "@/hooks/use-can-go-back";
 import { useReturnView } from "@/hooks/use-return-view";
 import { useRole } from "@/hooks/use-role";
 import { getReturn } from "@/mocks/returns";
@@ -26,6 +27,7 @@ function useOnboardingComplete(): [boolean, () => void] {
 /** The Client arm of `/`, with the same Return Areas and URL-owned Trail as Firm. */
 export function ReturnStatusPage() {
   const navigate = useNavigate();
+  const canGoBack = useCanGoBack();
   const { user, role, roleConfig } = useRole();
   const taxReturn = user.clientReturnId
     ? getReturn(user.clientReturnId)
@@ -83,22 +85,28 @@ export function ReturnStatusPage() {
     : [];
 
   return (
-    <ClientLayout title="Your return" firstRun={isFirstRun}>
+    <ClientLayout
+      title="Your return"
+      firstRun={isFirstRun}
+      trail={
+        displayReturn ? (
+          <Trail
+            taxReturn={displayReturn}
+            viewerFamily={roleConfig.family}
+            threads={threads}
+            singleLine
+          />
+        ) : undefined
+      }
+    >
       <div className="flex flex-col gap-6">
         {displayReturn && (
-          <>
-            <ReturnHeader
-              taxReturn={displayReturn}
-              messageCount={0}
-              onOpenMessages={openMessages}
-              onBack={() => navigate(-1)}
-            />
-            <Trail
-              taxReturn={displayReturn}
-              viewerFamily={roleConfig.family}
-              threads={threads}
-            />
-          </>
+          <ReturnHeader
+            taxReturn={displayReturn}
+            messageCount={0}
+            onOpenMessages={openMessages}
+            onBack={canGoBack ? () => navigate(-1) : undefined}
+          />
         )}
         {isFirstRun && onboarding && (
           <ClientOnboarding

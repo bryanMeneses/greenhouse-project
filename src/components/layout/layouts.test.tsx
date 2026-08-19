@@ -33,6 +33,8 @@ describe("InternalLayout", () => {
     expect(
       screen.getByRole("navigation", { name: /primary/i }),
     ).toBeInTheDocument();
+    // The global tier is grouped under a "Firm-wide" label.
+    expect(screen.getByText("Firm-wide")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { level: 1, name: "Dashboard" }),
     ).toBeInTheDocument();
@@ -67,17 +69,22 @@ describe("InternalLayout", () => {
     );
 
     // Point 1 IA: the contextual tier owns "where you are", so Command center is
-    // no longer lit on a Return route — the open Return is the current
-    // destination, with its Areas nested beneath.
+    // no longer lit on a Return route — the open Return is the group label, and
+    // its default Overview Area is the current destination.
     expect(
       screen.getByRole("link", { name: "Command center" }),
     ).not.toHaveAttribute("aria-current", "page");
-    expect(
-      screen.getByRole("link", { name: "Reyes Household · 2024" }),
-    ).toHaveAttribute("aria-current", "page");
+    // The open Return is the contextual group's label.
+    expect(screen.getByText("Reyes Household · 2024")).toBeInTheDocument();
+    const areas = within(
+      screen.getByRole("navigation", { name: "Reyes Household · 2024 Areas" }),
+    );
+    expect(areas.getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     // This Return's own "Documents" Area, scoped to the contextual tier so it isn't
-    // confused with the firm-wide "Documents" pool in the global nav above it.
-    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    // confused with the firm-wide "All documents" pool in the global nav above it.
     expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
   });
 
@@ -121,7 +128,9 @@ describe("InternalLayout", () => {
       </InternalLayout>,
     );
 
-    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    const areas = within(
+      screen.getByRole("navigation", { name: "Reyes Household · 2024 Areas" }),
+    );
     expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
@@ -136,9 +145,13 @@ describe("ClientLayout", () => {
       </ClientLayout>,
     );
 
-    // A Client sees their own single entry — not the firm's Command center or
-    // the firm-only Review Queue hint.
-    expect(screen.getByRole("link", { name: "My Return" })).toBeInTheDocument();
+    // A Client sees their own single labelled group — not the firm's Command
+    // center or the firm-only Review Queue hint.
+    expect(screen.getByText("My Return")).toBeInTheDocument();
+    const areas = within(
+      screen.getByRole("navigation", { name: "My Return Areas" }),
+    );
+    expect(areas.getByRole("link", { name: "Overview" })).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Command center" }),
     ).not.toBeInTheDocument();

@@ -53,12 +53,14 @@ describe("router", () => {
         { name: "Command center" },
       ),
     ).not.toHaveAttribute("aria-current", "page");
-    // The sidebar's Return link is the current destination; the breadcrumb also
-    // carries a matching "Reyes Household · 2024" crumb, so scope to the primary nav.
+    // The open Return is a labelled group now; its default Overview Area is the
+    // current destination.
     expect(
-      within(screen.getByRole("navigation", { name: "Primary" })).getByRole(
+      within(
+        screen.getByRole("navigation", { name: "Reyes Household · 2024 Areas" }),
+      ).getByRole(
         "link",
-        { name: "Reyes Household · 2024" },
+        { name: "Overview" },
       ),
     ).toHaveAttribute("aria-current", "page");
   });

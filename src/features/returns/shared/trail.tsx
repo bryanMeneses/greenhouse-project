@@ -14,11 +14,17 @@ import type { RoleFamily } from "@/lib/roles";
 import type { Return } from "./returns";
 import type { Thread } from "./collaboration";
 import { useReturnView } from "@/hooks/use-return-view";
+import { cn } from "@/lib/utils";
 
 type TrailProps = {
   taxReturn: Return;
   viewerFamily: RoleFamily;
   threads?: Thread[];
+  /** Fit on one non-wrapping line (header chrome): every crumb shares the
+   *  available width and truncates as needed — with the full label kept in a
+   *  `title` tooltip on the variable-length ones — so the trail stays on one row
+   *  inside its clipped header slot instead of wrapping to a second line. */
+  singleLine?: boolean;
 };
 
 /** The top-most destination each shell breadcrumbs from — the Firm's Command
@@ -36,7 +42,12 @@ const HOME_CRUMB: Record<RoleFamily, { label: string; to: string }> = {
  * object (current crumb marked). The Client's top-most level is their "My
  * Return", which doubles as the Return crumb since `/` is their whole shell.
  */
-export function Trail({ taxReturn, viewerFamily, threads = [] }: TrailProps) {
+export function Trail({
+  taxReturn,
+  viewerFamily,
+  threads = [],
+  singleLine = false,
+}: TrailProps) {
   const { pathname } = useLocation();
   const { area, focus } = useReturnView({
     areas: areasFor(viewerFamily).map((candidate) => candidate.id),
@@ -56,45 +67,65 @@ export function Trail({ taxReturn, viewerFamily, threads = [] }: TrailProps) {
         }
       : null;
 
+  const itemClassName = singleLine ? "min-w-0" : undefined;
+  const textClassName = singleLine ? "min-w-0 truncate" : undefined;
+  const separatorClassName = singleLine ? "shrink-0" : undefined;
+
   return (
     <Breadcrumb aria-label="Trail">
-      <BreadcrumbList>
-        <BreadcrumbItem>
+      <BreadcrumbList className={singleLine ? "flex-nowrap" : undefined}>
+        <BreadcrumbItem className={itemClassName}>
           <BreadcrumbLink asChild>
-            <Link to={home.to}>{home.label}</Link>
+            <Link to={home.to} className={textClassName}>
+              {home.label}
+            </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {returnCrumb && (
           <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
+            <BreadcrumbSeparator className={separatorClassName} />
+            <BreadcrumbItem className={itemClassName}>
               <BreadcrumbLink asChild>
-                <Link to={returnCrumb.to}>{returnCrumb.label}</Link>
+                <Link
+                  to={returnCrumb.to}
+                  title={returnCrumb.label}
+                  className={cn("max-w-52 min-w-0 truncate", textClassName)}
+                >
+                  {returnCrumb.label}
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </>
         )}
-        <BreadcrumbSeparator />
+        <BreadcrumbSeparator className={separatorClassName} />
         {currentObject ? (
-          <BreadcrumbItem>
+          <BreadcrumbItem className={itemClassName}>
             <BreadcrumbLink asChild>
-              <Link to={`${pathname}?area=${area}`}>{areaLabel}</Link>
+              <Link to={`${pathname}?area=${area}`} className={textClassName}>
+                {areaLabel}
+              </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
         ) : (
-          <BreadcrumbItem>
+          <BreadcrumbItem className={itemClassName}>
             {/* The current crumb is darker than the muted links via text-foreground
                 (shadcn's default); font-medium adds the "bolder" emphasis. */}
-            <BreadcrumbPage className="font-medium text-foreground">
+            <BreadcrumbPage className={cn("font-medium text-foreground", textClassName)}>
               {areaLabel}
             </BreadcrumbPage>
           </BreadcrumbItem>
         )}
         {currentObject && (
           <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="max-w-56 truncate font-medium text-foreground">
+            <BreadcrumbSeparator className={separatorClassName} />
+            <BreadcrumbItem className={itemClassName}>
+              <BreadcrumbPage
+                title={currentObject}
+                className={cn(
+                  "max-w-56 min-w-0 truncate font-medium text-foreground",
+                  textClassName,
+                )}
+              >
                 {currentObject}
               </BreadcrumbPage>
             </BreadcrumbItem>

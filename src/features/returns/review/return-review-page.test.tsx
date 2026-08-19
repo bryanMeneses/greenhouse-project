@@ -25,7 +25,7 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
     renderPage();
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Nguyen Family" }),
+      screen.getByRole("heading", { level: 2, name: "Nguyen Family" }),
     ).toBeInTheDocument();
     expect(screen.getByText("RET-2024-011")).toBeInTheDocument();
     expect(
@@ -47,7 +47,7 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
     ).toBeInTheDocument();
 
     // This Return's Documents Area (contextual tier), not the firm-wide pool nav.
-    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    const areas = within(screen.getByRole("navigation", { name: "Nguyen Family · 2024 Areas" }));
     await user.click(areas.getByRole("link", { name: "Documents" }));
 
     expect(
@@ -59,18 +59,20 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
     const user = userEvent.setup();
     renderPage();
 
-    const primary = () => screen.getByRole("navigation", { name: "Primary" });
     // This Return's Messages Area (contextual tier), not the firm-wide pool nav.
-    const areas = () => within(screen.getByRole("list", { name: /Areas$/i }));
-    expect(
-      within(primary()).getByRole("link", { name: "Overview" }),
-    ).toHaveAttribute("aria-current", "page");
+    const areas = () =>
+      within(screen.getByRole("navigation", { name: "Nguyen Family · 2024 Areas" }));
+    expect(areas().getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
 
     await user.click(areas().getByRole("link", { name: "Messages" }));
 
-    expect(
-      within(primary()).getByRole("link", { name: "Overview" }),
-    ).not.toHaveAttribute("aria-current", "page");
+    expect(areas().getByRole("link", { name: "Overview" })).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(areas().getByRole("link", { name: "Messages" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -80,19 +82,25 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
   it("lists the four firm Areas in the contextual tier, with the activity Area renamed", () => {
     renderPage();
 
+    // The firm-wide pools carry the "All …" prefix, distinct from the
+    // contextual "Documents"/"Messages" Areas for this one Return.
     const primary = within(screen.getByRole("navigation", { name: "Primary" }));
-    expect(primary.getByRole("link", { name: "Overview" })).toBeInTheDocument();
-    // The contextual "Documents"/"Messages" Areas — scoped, since the global nav
-    // now also has firm-wide "Documents" and "Messages" links.
-    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    expect(
+      primary.getByRole("link", { name: "All documents" }),
+    ).toBeInTheDocument();
+    expect(
+      primary.getByRole("link", { name: "All messages" }),
+    ).toBeInTheDocument();
+    const areas = within(screen.getByRole("navigation", { name: "Nguyen Family · 2024 Areas" }));
+    expect(areas.getByRole("link", { name: "Overview" })).toBeInTheDocument();
     expect(areas.getByRole("link", { name: "Documents" })).toBeInTheDocument();
     expect(
-      primary.getByRole("link", { name: "Requests & Activity" }),
+      areas.getByRole("link", { name: "Requests & Activity" }),
     ).toBeInTheDocument();
     expect(areas.getByRole("link", { name: "Messages" })).toBeInTheDocument();
     // The old label is gone.
     expect(
-      primary.queryByRole("link", { name: "Questions & Requests" }),
+      areas.queryByRole("link", { name: "Questions & Requests" }),
     ).not.toBeInTheDocument();
   });
 
@@ -103,7 +111,7 @@ describe("ReturnReviewPage — header + contextual Areas", () => {
     await user.click(screen.getByRole("button", { name: /Messages/ }));
 
     // This Return's Messages Area (contextual tier), not the firm-wide pool nav.
-    const areas = within(screen.getByRole("list", { name: /Areas$/i }));
+    const areas = within(screen.getByRole("navigation", { name: "Nguyen Family · 2024 Areas" }));
     expect(areas.getByRole("link", { name: "Messages" })).toHaveAttribute(
       "aria-current",
       "page",

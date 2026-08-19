@@ -48,14 +48,18 @@ describe("Return Trail and Connection links", () => {
     expect(trail).toHaveTextContent(
       /Command center.*Nguyen Family · 2024.*Messages.*Requesting your Form 1098/,
     );
-    // The Return crumb links back to Overview.
+    // The Return crumb links back to Overview, and a long client name keeps its
+    // full label available as a tooltip while it truncates.
     expect(
       screen.getByRole("link", { name: "Nguyen Family · 2024" }),
     ).toHaveAttribute("href", `${PATHNAME}?area=overview`);
-    // The focused object is the current crumb.
-    expect(trail.querySelector("[aria-current='page']")).toHaveTextContent(
-      "Requesting your Form 1098",
-    );
+    expect(
+      screen.getByRole("link", { name: "Nguyen Family · 2024" }),
+    ).toHaveAttribute("title", "Nguyen Family · 2024");
+    // The focused object is the current crumb, with its full label as a tooltip.
+    const current = trail.querySelector("[aria-current='page']");
+    expect(current).toHaveTextContent("Requesting your Form 1098");
+    expect(current).toHaveAttribute("title", "Requesting your Form 1098");
   });
 
   it("uses the Client's top-most level instead of Command center, with no Return crumb", () => {
@@ -87,6 +91,28 @@ describe("Return Trail and Connection links", () => {
     expect(trail.querySelector("[aria-current='page']")).toHaveTextContent(
       "Documents",
     );
+  });
+
+  it("falls back to the Area as current when a deep-linked focus can't be resolved", () => {
+    // A stale or out-of-scope focus id — e.g. a deep link to a Thread that was
+    // filtered out for this viewer, or an id that no longer exists — must not
+    // render an empty trailing crumb. The Trail degrades to marking the Area
+    // itself as the current step.
+    render(
+      <MemoryRouter
+        initialEntries={[`${PATHNAME}?area=messages&focus=thread:does-not-exist`]}
+      >
+        <Trail taxReturn={taxReturn} viewerFamily="firm" threads={threads} />
+      </MemoryRouter>,
+    );
+
+    const trail = screen.getByRole("navigation", { name: "Trail" });
+    // The Area is the current crumb (no object crumb after it), and the raw id
+    // never leaks into the trail.
+    expect(trail.querySelector("[aria-current='page']")).toHaveTextContent(
+      "Messages",
+    );
+    expect(trail).not.toHaveTextContent("does-not-exist");
   });
 
   it("names a Connection's target kind, so a document link never reads as a thread", () => {
