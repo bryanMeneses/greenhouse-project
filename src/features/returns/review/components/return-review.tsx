@@ -23,7 +23,8 @@ type ReturnReviewProps = {
 export type FieldAction =
   | { type: "accept"; fieldId: string }
   | { type: "edit"; fieldId: string; value: number }
-  | { type: "flag"; fieldId: string };
+  | { type: "flag"; fieldId: string }
+  | { type: "set-value"; fieldId: string; value: number };
 
 function applyAction(field: Field, action: FieldAction): Field {
   switch (action.type) {
@@ -37,6 +38,12 @@ function applyAction(field: Field, action: FieldAction): Field {
       };
     case "flag":
       return { ...field, state: "needs-approval" };
+    // A directly-editable Field (challenge 08) the Preparer types into — its value
+    // is their own, not an AI suggestion, so we update `value` in place and leave it
+    // editable, rather than recording a `correction` (which would falsely read as
+    // "AI said …"). The workspace owns this state, so the edit survives Area switches.
+    case "set-value":
+      return { ...field, value: action.value };
   }
 }
 
@@ -88,18 +95,9 @@ export function ReturnReview({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Challenge 09 leads with orientation and scale: the map keeps hundreds of
-          work items searchable while the existing queue remains the action surface. */}
-      <ComplexityNavigator
-        taxReturn={taxReturn}
-        viewerFamily="firm"
-        onInspectField={(fieldId) =>
-          setFocus({ kind: "field", id: fieldId }, "overview")
-        }
-      />
-
-      {/* The Review Queue stays full width and emphasized — the CPA's primary
-          job on the return. Income & Deductions share the space below it. */}
+      {/* Overview leads with the decision, not the map (challenge 07 → #24): the
+          Review Queue — the low-Confidence Fields the CPA must clear — is the "do
+          this now" surface, so it comes first and full width. */}
       <ReviewQueuePanel
         fields={queue}
         onReview={(fieldId) =>
@@ -107,8 +105,23 @@ export function ReturnReview({
         }
       />
 
+      {/* Then the return's own figures, section by section. */}
       <ReturnView
         return={taxReturn}
+        onInspectField={(fieldId) =>
+          setFocus({ kind: "field", id: fieldId }, "overview")
+        }
+        onEditField={(fieldId, value) =>
+          onAction({ type: "set-value", fieldId, value })
+        }
+      />
+
+      {/* The Return map sits below the queue: it's the orientation-and-scale tool
+          (challenge 09) — search, filter, and hierarchy over the hundreds of work
+          items — there when you need to explore, not the lead action. */}
+      <ComplexityNavigator
+        taxReturn={taxReturn}
+        viewerFamily="firm"
         onInspectField={(fieldId) =>
           setFocus({ kind: "field", id: fieldId }, "overview")
         }

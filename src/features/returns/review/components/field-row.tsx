@@ -17,13 +17,15 @@ type FieldRowProps = {
   field: Field;
   /** Called when an inspectable Field's value is activated (→ provenance, challenge 01). */
   onInspect?: (fieldId: string) => void;
+  /** Commit a directly-editable Field's new value (challenge 08). */
+  onEdit?: (fieldId: string, value: number) => void;
 };
 
 /**
  * One Field on a Return: its label, its value rendered with the affordance its
  * Field State allows, and the state badge. Locked Fields explain why they're read-only.
  */
-export function FieldRow({ field, onInspect }: FieldRowProps) {
+export function FieldRow({ field, onInspect, onEdit }: FieldRowProps) {
   const labelId = React.useId();
   const reasonId = React.useId();
   const { affordance } = FIELD_STATE_CONFIG[field.state];
@@ -53,6 +55,7 @@ export function FieldRow({ field, onInspect }: FieldRowProps) {
             labelId={labelId}
             reasonId={isLocked ? reasonId : undefined}
             onInspect={onInspect}
+            onEdit={onEdit}
           />
           <FieldStateBadge state={field.state} />
         </div>
@@ -80,6 +83,7 @@ type FieldValueProps = {
   labelId: string;
   reasonId?: string;
   onInspect?: (fieldId: string) => void;
+  onEdit?: (fieldId: string, value: number) => void;
 };
 
 function FieldValue({
@@ -89,13 +93,32 @@ function FieldValue({
   labelId,
   reasonId,
   onInspect,
+  onEdit,
 }: FieldValueProps) {
   if (affordance === "edit") {
+    // Commit the typed value on blur or Enter: parse it back to a number, and if it
+    // reads as a valid, changed amount, save it (challenge 08 — an editable Field
+    // that actually persists). Anything unparseable snaps back to the last value, so
+    // the input can never leave a bad number on screen.
+    const commit = (input: HTMLInputElement) => {
+      const parsed = Number(input.value.replace(/[^0-9.-]/g, ""));
+      if (!Number.isFinite(parsed)) {
+        input.value = formatCurrency(currentValue(field));
+        return;
+      }
+      if (parsed !== currentValue(field)) onEdit?.(field.id, parsed);
+      input.value = formatCurrency(parsed);
+    };
     return (
       <input
         type="text"
+        inputMode="numeric"
         defaultValue={formatted}
         aria-labelledby={labelId}
+        onBlur={(event) => commit(event.currentTarget)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
         className={cn(
           "w-32 rounded-md border border-input bg-card px-3 py-1.5 text-right text-sm tabular-nums shadow-sm",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
