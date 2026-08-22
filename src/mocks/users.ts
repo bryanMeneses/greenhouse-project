@@ -1,8 +1,9 @@
 /**
  * Seeded demo logins (no real auth, ADR-0005):
  * - Jordan Avery is multi-role — a firm Preparer who is also the Individual
- *   Taxpayer on their own Return. This is the case study's "employee with a
- *   personal return", and the User whose role switch is worth showing.
+ *   Taxpayer on their own Return (`rtn-avery-2024`, prepared by their colleague
+ *   Dana, not self). This is the case study's "employee with a personal return",
+ *   and the User whose role switch is worth showing.
  * - Dana Reyes holds a single Firm Role — the "nothing to switch" contrast.
  *
  * The domain types (User, ActiveRole) live in `@/lib/roles`; the demo roster
@@ -16,7 +17,7 @@ export const USERS: User[] = [
     name: "Jordan Avery",
     initials: "JA",
     roles: ["preparer", "individual-taxpayer"],
-    clientReturnId: "rtn-nguyen-2024",
+    clientReturnId: "rtn-avery-2024",
   },
   {
     id: "user-dana",

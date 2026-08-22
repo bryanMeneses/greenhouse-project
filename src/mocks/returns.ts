@@ -259,6 +259,15 @@ export const SEED_TODAY = new Date("2026-08-08T00:00:00");
 export const NGUYEN_1098_REQUEST_ID = "rtn-nguyen-2024-req-1098";
 
 /**
+ * The two Client-owned Requests on Jordan Avery's *personal* Return (see
+ * `AVERY_2024`) — the multi-role showcase (challenge 05). The onboarding seed in
+ * `@/mocks/onboarding` points its two first-run steps at these same ids, so
+ * fulfilling an onboarding step closes the matching Request on the Return.
+ */
+export const AVERY_1098_REQUEST_ID = "rtn-avery-2024-req-1098";
+export const AVERY_BANK_REQUEST_ID = "rtn-avery-2024-req-bank";
+
+/**
  * A compact spec for a roster Return. REYES_2024 is the hand-authored showcase
  * (full Provenance, real corrections); the rest of the roster exists to give the
  * dashboard a realistic, legible volume of Returns to rank, so `makeReturn` builds
@@ -336,7 +345,7 @@ function makeReturn(spec: ReturnSpec): Return {
     rationale: "Read straight from Box 1 of the W-2.",
     sources: [
       {
-        documentId: "doc-w2-acme",
+        documentId: "doc-w2-acme-nguyen",
         page: 1,
         region: "box-1",
         snippet: "Box 1  Wages, tips, other comp .............. 72,000.00",
@@ -455,6 +464,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-okafor-2024",
     client: "Okafor LLC",
+    returnNumber: "RET-2024-013",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-08-01",
@@ -465,6 +475,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-abbott-2024",
     client: "Abbott & Sons",
+    returnNumber: "RET-2024-015",
     taxYear: 2024,
     stage: "intake",
     deadline: "2026-08-08",
@@ -474,6 +485,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-delacruz-2024",
     client: "Dela Cruz Ventures",
+    returnNumber: "RET-2024-017",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-08-11",
@@ -483,6 +495,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-brenner-2024",
     client: "Brenner Consulting",
+    returnNumber: "RET-2024-019",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-09-30",
@@ -491,6 +504,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-castillo-2024",
     client: "Castillo Trust",
+    returnNumber: "RET-2024-021",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-10-15",
@@ -500,6 +514,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-owens-2024",
     client: "Owens Retail",
+    returnNumber: "RET-2024-023",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-10-01",
@@ -509,6 +524,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-silva-2024",
     client: "Silva Restaurant Group",
+    returnNumber: "RET-2024-025",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-09-20",
@@ -518,6 +534,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-park-2024",
     client: "Park Holdings",
+    returnNumber: "RET-2024-027",
     taxYear: 2024,
     stage: "intake",
     deadline: "2026-11-15",
@@ -528,6 +545,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-vasquez-2024",
     client: "Vasquez & Co",
+    returnNumber: "RET-2024-029",
     taxYear: 2024,
     stage: "in-review",
     deadline: "2026-11-01",
@@ -537,6 +555,7 @@ const ROSTER: Return[] = [
   makeReturn({
     id: "rtn-underwood-2024",
     client: "Underwood Estate",
+    returnNumber: "RET-2024-031",
     taxYear: 2024,
     stage: "ready-to-file",
     deadline: "2026-10-30",
@@ -544,10 +563,51 @@ const ROSTER: Return[] = [
   }),
 ];
 
-/** All seed Returns. The single source of truth for Field data. */
+/**
+ * Jordan Avery's *personal* 1040 — the "firm employee who also has a return in the
+ * system" the role-aware brief calls out (challenge 05). It is prepared by a
+ * *colleague* (Dana Reyes), not self-prepared, so the multi-role switch reads
+ * coherently: acting as Preparer, Jordan works their book (`RETURNS`); switching to
+ * Individual Taxpayer, Jordan sees this return in their own name, owned by Dana.
+ * Deliberately kept out of `RETURNS` — Jordan doesn't own it, so it isn't in
+ * Jordan's book/roster — but `getReturn` still resolves it for the client view.
+ */
+const AVERY_2024: Return = makeReturn({
+  id: "rtn-avery-2024",
+  client: "Jordan Avery",
+  returnNumber: "RET-2024-002",
+  taxYear: 2024,
+  stage: "in-review",
+  deadline: "2026-09-15",
+  ownerName: "Dana Reyes",
+  lowConfidence: 1,
+  openItems: [
+    {
+      id: AVERY_1098_REQUEST_ID,
+      label: "2024 Form 1098 (mortgage interest)",
+      owner: "client",
+      urgency: "high",
+    },
+    {
+      id: AVERY_BANK_REQUEST_ID,
+      label: "Bank details for direct deposit",
+      owner: "client",
+      urgency: "normal",
+    },
+  ],
+});
+
+/** The firm roster — every Return in the acting Preparer's book (challenge 07). */
 export const RETURNS: Return[] = [REYES_2024, ...ROSTER];
+
+/**
+ * Every seed Return the app can resolve by id — the roster plus Jordan's personal
+ * Return, which lives outside the firm book but is still reachable from the client
+ * view. The single source of truth for Field data.
+ */
+const ALL_RETURNS: Return[] = [...RETURNS, AVERY_2024];
 
 /** Look up a seed Return by id. */
 export function getReturn(id: string): Return | undefined {
-  return RETURNS.find((r) => r.id === id);
+  return ALL_RETURNS.find((r) => r.id === id);
 }

@@ -1,10 +1,12 @@
 /**
  * Seed Thread data (simulated, ADR-0005 + ADR-0008). All fake collaboration data
  * lives here; the domain types and pure logic stay in
- * `@/features/returns/shared/collaboration`. The original 3 Threads anchor to the
- * Nguyen Return — the one reachable behind both the Preparer review and the Client
- * view (via the 05 role switch) — so the audience boundary is demonstrable on one
- * Return. No new Return is seeded (#19).
+ * `@/features/returns/shared/collaboration`. Two client relationships carry the
+ * audience boundary: the Nguyen Return shows it from the *firm* side (Jordan, as
+ * Preparer, sees internal notes beside client-visible ones), and Jordan's own
+ * personal Return (`rtn-avery-2024`, prepared by Dana) shows it from the *client*
+ * side (Jordan, as Individual Taxpayer, never sees the internal notes) — so the
+ * 05 role switch demonstrates both halves of the boundary.
  *
  * A further handful of Threads (below) anchor to 3 other roster Returns, added for
  * the firm-wide pooled Messages inbox (#23) — a pool over a single Return's Threads
@@ -15,7 +17,11 @@
  * ordering renders identically on every load.
  */
 import type { Message, Thread } from "@/features/returns/shared/collaboration";
-import { NGUYEN_1098_REQUEST_ID, SEED_TODAY } from "@/mocks/returns";
+import {
+  AVERY_1098_REQUEST_ID,
+  NGUYEN_1098_REQUEST_ID,
+  SEED_TODAY,
+} from "@/mocks/returns";
 
 const RETURN_ID = "rtn-nguyen-2024";
 
@@ -59,7 +65,7 @@ const w2Thread: Thread = {
   returnId: RETURN_ID,
   subject: {
     kind: "source-document",
-    documentId: "doc-w2-acme",
+    documentId: "doc-w2-acme-nguyen",
     title: "W-2 (Acme Corp)",
   },
   title: "W-2 wages — a quick check on Box 1",
@@ -149,6 +155,113 @@ const returnThread: Thread = {
   ],
 };
 
+// ─── Jordan's personal Return (client-side boundary showcase) ───────────────
+// Dana Reyes preps it; Jordan Avery is the taxpayer. Mirrors the Nguyen Threads so
+// the Client view (Jordan as Individual Taxpayer) has real conversations — and its
+// internal notes prove the boundary from the client's side (Jordan never sees them).
+
+const AVERY_RETURN_ID = "rtn-avery-2024";
+const DANA = { role: "preparer" as const, name: "Dana Reyes" };
+const JORDAN_CLIENT = {
+  role: "individual-taxpayer" as const,
+  name: "Jordan Avery",
+};
+
+// Thread A: a question on Jordan's own W-2 (Box 1 $72,000), with an internal note.
+const T_AVERY_W2 = "thread-avery-w2";
+const averyW2Thread: Thread = {
+  id: T_AVERY_W2,
+  returnId: AVERY_RETURN_ID,
+  subject: {
+    kind: "source-document",
+    documentId: "doc-w2-acme-nguyen",
+    title: "W-2 (Acme Corp)",
+  },
+  title: "W-2 wages — a quick check on Box 1",
+  messages: [
+    message(
+      T_AVERY_W2,
+      1,
+      DANA,
+      "client-visible",
+      "Quick check on your Acme Corp W-2 — Box 1 shows $72,000. Can you confirm this is your final copy?",
+      seedTime(9),
+    ),
+    message(
+      T_AVERY_W2,
+      2,
+      JORDAN_CLIENT,
+      "client-visible",
+      "Confirmed — that's the final W-2.",
+      seedTime(8, 14),
+    ),
+    // Firm-only note living inside a client-visible thread — never shown to Jordan
+    // in the Client view. The client-side half of the audience boundary.
+    message(
+      T_AVERY_W2,
+      3,
+      DANA,
+      "internal",
+      "Ties out to the IRS wage transcript — no follow-up needed.",
+      seedTime(8, 15),
+    ),
+  ],
+};
+
+// Thread B: the 1098 Request — the Open Item Jordan's onboarding asks them to upload.
+const T_AVERY_1098 = "thread-avery-1098";
+const averyRequest1098Thread: Thread = {
+  id: T_AVERY_1098,
+  returnId: AVERY_RETURN_ID,
+  subject: { kind: "open-item", openItemId: AVERY_1098_REQUEST_ID },
+  title: "Requesting your Form 1098",
+  messages: [
+    message(
+      T_AVERY_1098,
+      1,
+      DANA,
+      "client-visible",
+      "To finish your mortgage-interest deduction I'll need your 2024 Form 1098 from your lender. You can upload it right here.",
+      seedTime(6),
+    ),
+    message(
+      T_AVERY_1098,
+      2,
+      DANA,
+      "internal",
+      "If it's not in by the deadline, file without the deduction and amend later.",
+      seedTime(6, 10),
+    ),
+  ],
+};
+
+// Thread C: a return-level conversation.
+const T_AVERY_RETURN = "thread-avery-return";
+const averyReturnThread: Thread = {
+  id: T_AVERY_RETURN,
+  returnId: AVERY_RETURN_ID,
+  subject: { kind: "return" },
+  title: "Your 2024 return",
+  messages: [
+    message(
+      T_AVERY_RETURN,
+      1,
+      DANA,
+      "client-visible",
+      "I've started on your 2024 return and will flag anything I need from you right here as we go.",
+      seedTime(12),
+    ),
+    message(
+      T_AVERY_RETURN,
+      2,
+      JORDAN_CLIENT,
+      "client-visible",
+      "Thanks Dana — just let me know what you need.",
+      seedTime(11, 16),
+    ),
+  ],
+};
+
 // ─── Cross-Return Threads (#23) — spreading the pool across other clients ──
 
 const CLIENT_REYES = {
@@ -184,8 +297,8 @@ const reyesReturnThread: Thread = {
   ],
 };
 
-// Thread 5: a question on the Reyes W-2 (shares the same seed Document as Nguyen's —
-// the same documentId can back a Thread on more than one Return, per #21's pooling).
+// Thread 5: a question on the Reyes W-2 — its own Acme facsimile (`doc-w2-acme`,
+// Box 1 $84,250), distinct from the roster's `doc-w2-acme-nguyen` ($72,000).
 const T_REYES_W2 = "thread-reyes-w2";
 const reyesW2Thread: Thread = {
   id: T_REYES_W2,
@@ -288,6 +401,9 @@ export const THREADS: Thread[] = [
   w2Thread,
   request1098Thread,
   returnThread,
+  averyW2Thread,
+  averyRequest1098Thread,
+  averyReturnThread,
   reyesReturnThread,
   reyesW2Thread,
   owensEngagementThread,

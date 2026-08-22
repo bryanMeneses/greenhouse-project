@@ -1,18 +1,23 @@
 /**
  * Simulated first-run Client data for Challenge 03. The two actionable items
- * point at the existing Nguyen Return's Client-owned Open Items, so onboarding,
- * status, and collaboration all describe the same next actions.
+ * point at Jordan Avery's personal Return (`rtn-avery-2024`) and its Client-owned
+ * Open Items, so onboarding, status, and the Return's own Requests all describe the
+ * same next actions — and the first-run experience belongs to the taxpayer whose
+ * return it is (challenge 05), not to a client Jordan preps.
  */
 import type { ClientOnboardingSeed } from "@/features/returns/client-view/onboarding";
-import { NGUYEN_1098_REQUEST_ID } from "@/mocks/returns";
+import {
+  AVERY_1098_REQUEST_ID,
+  AVERY_BANK_REQUEST_ID,
+} from "@/mocks/returns";
 
-const NGUYEN_RETURN_ID = "rtn-nguyen-2024";
+const AVERY_RETURN_ID = "rtn-avery-2024";
 
 export const NEW_CLIENT_ONBOARDING: ClientOnboardingSeed = {
-  returnId: NGUYEN_RETURN_ID,
+  returnId: AVERY_RETURN_ID,
   documents: [
     {
-      id: "doc-w2-acme",
+      id: "doc-w2-acme-nguyen",
       title: "W-2 from Acme Corp",
       state: "received",
     },
@@ -30,7 +35,7 @@ export const NEW_CLIENT_ONBOARDING: ClientOnboardingSeed = {
       description:
         "Your W-2 is in. Add the Form 1098 so your preparer can finish your mortgage-interest deduction.",
       state: "in-progress",
-      requestId: NGUYEN_1098_REQUEST_ID,
+      requestId: AVERY_1098_REQUEST_ID,
       urgency: "high",
       actionLabel: "Upload Form 1098",
     },
@@ -41,7 +46,7 @@ export const NEW_CLIENT_ONBOARDING: ClientOnboardingSeed = {
       description:
         "Answer two quick questions about your filing and direct-deposit preferences.",
       state: "ready",
-      requestId: "rtn-nguyen-2024-req-bank",
+      requestId: AVERY_BANK_REQUEST_ID,
       urgency: "normal",
       actionLabel: "Confirm details",
     },
@@ -50,7 +55,7 @@ export const NEW_CLIENT_ONBOARDING: ClientOnboardingSeed = {
       kind: "preparer-review",
       title: "Your preparer reviews the return",
       description:
-        "Once your items are in, Jordan will review everything and let you know if anything else is needed.",
+        "Once your items are in, Dana will review everything and let you know if anything else is needed.",
       state: "waiting",
     },
   ],

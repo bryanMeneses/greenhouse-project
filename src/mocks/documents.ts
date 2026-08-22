@@ -37,6 +37,38 @@ export const SOURCE_DOCUMENTS: Record<string, SourceDocument> = {
       },
     ],
   },
+  // The lighter roster Returns (and Nguyen, the collaboration showcase) share one
+  // generic Acme W-2 facsimile — distinct from Reyes's `doc-w2-acme` above, which
+  // is its own upload at a different Box 1. Same shared-catalog move the pooled
+  // Documents table documents: one facsimile stands in for each Return's own W-2,
+  // and its printed amounts must match the Fields that trace to it ($72,000).
+  "doc-w2-acme-nguyen": {
+    id: "doc-w2-acme-nguyen",
+    kind: "W-2",
+    title: "W-2 (Acme Corp)",
+    pages: [
+      {
+        page: 1,
+        lines: [
+          {
+            region: "box-1",
+            label: "Box 1 — Wages, tips, other comp",
+            amount: "72,000.00",
+          },
+          {
+            region: "box-2",
+            label: "Box 2 — Federal income tax withheld",
+            amount: "11,880.00",
+          },
+          {
+            region: "box-3",
+            label: "Box 3 — Social security wages",
+            amount: "72,000.00",
+          },
+        ],
+      },
+    ],
+  },
   "doc-1099int-first": {
     id: "doc-1099int-first",
     kind: "1099-INT",

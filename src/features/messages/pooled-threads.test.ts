@@ -15,9 +15,17 @@ import { NGUYEN_1098_REQUEST_ID, RETURNS } from "@/mocks/returns";
 describe("collectFirmThreads", () => {
   const rows = collectFirmThreads(RETURNS);
 
-  it("pools exactly one row per seeded Thread, across every Return that has one", () => {
-    expect(rows).toHaveLength(THREADS.length);
-    expect(new Set(rows.map((r) => r.rowId)).size).toBe(THREADS.length);
+  it("pools exactly one row per seeded Thread on a roster Return — and only roster Returns", () => {
+    // The firm pool covers the firm's book (`RETURNS`). Jordan's personal Return
+    // (`rtn-avery-2024`, prepared by Dana) sits outside that book, so its Threads —
+    // Jordan's own client conversations — never surface in the firm-wide inbox.
+    const rosterReturnIds = new Set(RETURNS.map((r) => r.id));
+    const rosterThreads = THREADS.filter((t) =>
+      rosterReturnIds.has(t.returnId),
+    );
+    expect(rows).toHaveLength(rosterThreads.length);
+    expect(new Set(rows.map((r) => r.rowId)).size).toBe(rosterThreads.length);
+    expect(rows.some((r) => r.returnId === "rtn-avery-2024")).toBe(false);
   });
 
   it("names each row's own client — not de-duped across Returns", () => {
