@@ -96,14 +96,18 @@ describe("Dashboard", () => {
       screen.getByRole("heading", { name: /Work that needs you/i }),
     ).toBeInTheDocument();
 
-    // Both a low-confidence batch and a preparer Open Item open the review
-    // workspace (Overview) — where the work actually happens, never a dead-end.
+    // A low-confidence batch opens the review workspace (Overview) as a whole;
+    // a preparer Open Item deep-links into the Requests Area focused on itself —
+    // each lands *at the work*, never on a dead-end.
     expect(
       screen.getByRole("link", { name: /Review 1 low-confidence value/i }),
     ).toHaveAttribute("href", "/returns/rtn-overdue?area=overview");
     expect(
       screen.getByRole("link", { name: /Send reviewer handoff/i }),
-    ).toHaveAttribute("href", "/returns/rtn-overdue?area=overview");
+    ).toHaveAttribute(
+      "href",
+      "/returns/rtn-overdue?area=requests&focus=open-item:t1",
+    );
 
     // The Client-owned Request is waiting on the Client, so it's not framed as the
     // Preparer's work — it never appears in "Work that needs you".

@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { AlertTriangle, ChevronRight, CircleDot } from "lucide-react";
 
 import type { ActionItem } from "@/features/dashboard/command-center";
+import { focusToParam } from "@/hooks/use-return-view";
 import { cn } from "@/lib/utils";
 
 const KIND_LABEL: Record<ActionItem["kind"], string> = {
@@ -68,10 +69,13 @@ export function ActionList({ items }: { items: ActionItem[] }) {
 function ActionRow({ item }: { item: ActionItem }) {
   const Icon = item.urgent ? AlertTriangle : CircleDot;
   const summary = `${item.label}. ${item.client}, ${KIND_LABEL[item.kind]}. ${item.deadline}.`;
+  const to = `/returns/${item.returnId}?area=${item.area}${
+    item.focus ? `&focus=${focusToParam(item.focus)}` : ""
+  }`;
 
   return (
     <Link
-      to={`/returns/${item.returnId}?area=${item.area}`}
+      to={to}
       aria-label={summary}
       className={cn(
         "flex items-center gap-3 px-5 py-3.5 transition-colors sm:px-6",

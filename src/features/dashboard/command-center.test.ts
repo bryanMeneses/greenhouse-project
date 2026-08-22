@@ -113,11 +113,17 @@ describe("buildActionList", () => {
     const actionList = buildActionList(returns, NOW);
     const byId = Object.fromEntries(actionList.map((item) => [item.id, item]));
 
+    // The review batch opens the Overview workspace as a whole — no single focus.
     expect(byId["rtn-overdue:review"].area).toBe("overview");
     expect(byId["rtn-overdue:review"].kind).toBe("review");
-    // A Preparer-owned Open Item opens the review workspace too, not the
-    // client-only Requests Area — so the row lands on real content.
-    expect(byId["rtn-overdue:t1"].area).toBe("overview");
+    expect(byId["rtn-overdue:review"].focus).toBeUndefined();
+    // A Preparer-owned Open Item deep-links into the Requests Area, focused on
+    // itself — the row lands *at the work*, not on a generic screen.
+    expect(byId["rtn-overdue:t1"].area).toBe("requests");
     expect(byId["rtn-overdue:t1"].kind).toBe("open-item");
+    expect(byId["rtn-overdue:t1"].focus).toEqual({
+      kind: "open-item",
+      id: "t1",
+    });
   });
 });
