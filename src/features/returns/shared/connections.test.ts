@@ -21,14 +21,14 @@ describe("connectionsFor", () => {
     );
 
     expect(connections.map((connection) => connection.target)).toEqual([
-      { kind: "source-document", id: "doc-w2-acme" },
+      { kind: "source-document", id: "doc-w2-acme-nguyen" },
       { kind: "thread", id: "thread-nguyen-w2" },
     ]);
   });
 
   it("resolves a Source Document to its Fields and Thread", () => {
     const connections = connectionsFor(
-      ids("source-document", "doc-w2-acme"),
+      ids("source-document", "doc-w2-acme-nguyen"),
       taxReturn,
       threads,
     );
@@ -85,7 +85,7 @@ describe("connectionsFor", () => {
 
     // Handed the Thread directly, the neutral resolver surfaces it...
     const neutral = connectionsFor(
-      ids("source-document", "doc-w2-acme"),
+      ids("source-document", "doc-w2-acme-nguyen"),
       taxReturn,
       [internalThread],
     );
@@ -93,7 +93,7 @@ describe("connectionsFor", () => {
 
     // ...but a Client surface filters its Thread set first, so it never reaches one.
     const clientGated = connectionsFor(
-      ids("source-document", "doc-w2-acme"),
+      ids("source-document", "doc-w2-acme-nguyen"),
       taxReturn,
       threadsVisibleTo([internalThread], "client"),
     );

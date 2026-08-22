@@ -17,10 +17,11 @@ type AreaSectionProps = {
 };
 
 /**
- * The shared visual shell every Return Area body renders in: one bordered card
- * with the Area's identity (icon eyebrow + serif title + description) baked into
- * its header and an optional right-aligned action. Documents, Messages, and
- * Requests & Activity all read as the same surface; only the body differs, and
+ * The shared visual shell every Return Area body renders in: the Area's identity
+ * (icon eyebrow + serif title + description, plus an optional right-aligned action)
+ * stands on its own above a bordered body card, separated by a margin so the header
+ * reads as a heading rather than a bar wedged onto the content. Documents, Messages,
+ * and Requests & Activity all read as the same surface; only the body differs, and
  * it is passed as composable `children`.
  */
 export function AreaSection({
@@ -34,11 +35,8 @@ export function AreaSection({
   const headingId = React.useId();
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex w-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-    >
-      <header className="flex items-start justify-between gap-4 border-b border-border bg-card px-5 py-5 sm:px-6">
+    <section aria-labelledby={headingId} className="flex w-full flex-col gap-4">
+      <header className="flex items-start justify-between gap-4 px-1">
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -60,7 +58,9 @@ export function AreaSection({
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </header>
-      {children}
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        {children}
+      </div>
     </section>
   );
 }

@@ -83,8 +83,9 @@ const REQUEST_THREAD: Thread = {
   subject: { kind: "open-item", openItemId: "r-high" },
 };
 
-describe("RequestsActivityPanel — requests lead, by urgency", () => {
-  it("lists only open client Requests, urgent first", () => {
+describe("RequestsActivityPanel — On your plate / Open requests tabs", () => {
+  it("defaults to your plate; client Requests sit behind the Open requests tab, urgent first", async () => {
+    const user = userEvent.setup();
     render(
       <RequestsActivityPanel
         taxReturn={makeReturn(OPEN_ITEMS)}
@@ -93,10 +94,13 @@ describe("RequestsActivityPanel — requests lead, by urgency", () => {
       />,
     );
 
-    // Preparer-owned + closed items are not Requests and don't appear here.
-    expect(screen.queryByText("Verify the 8879")).not.toBeInTheDocument();
+    // Plate is the default tab: the Preparer-owned active item shows; the Closed
+    // one is done, so it appears nowhere.
+    expect(screen.getByText("Verify the 8879")).toBeInTheDocument();
     expect(screen.queryByText("Corrected 1099-INT")).not.toBeInTheDocument();
 
+    // The client Requests live behind the other tab, urgent first.
+    await user.click(screen.getByRole("tab", { name: /Open requests/ }));
     const labels = screen
       .getAllByRole("listitem")
       .map((li) => li.textContent ?? "");
@@ -105,6 +109,30 @@ describe("RequestsActivityPanel — requests lead, by urgency", () => {
     );
     expect(requestOrder[0]).toContain("1098"); // high urgency first
     expect(requestOrder[1]).toContain("bank details");
+  });
+
+  it("labels rows by owner and makes each Open Item addressable for deep-linking", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <RequestsActivityPanel
+        taxReturn={makeReturn(OPEN_ITEMS)}
+        threads={THREADS}
+        viewerFamily="firm"
+      />,
+    );
+
+    // Plate tab (default): the Preparer subtitle, and the challenge-04 focus hook
+    // the dashboard action list deep-links to (`?area=requests&focus=open-item:p-1`).
+    expect(screen.getByText("Needs your action")).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        '[data-return-focus="p-1"][data-return-focus-kind="open-item"]',
+      ),
+    ).not.toBeNull();
+
+    // Client rows read "Waiting on client" — not the old hardcoded label everywhere.
+    await user.click(screen.getByRole("tab", { name: /Open requests/ }));
+    expect(screen.getAllByText("Waiting on client").length).toBeGreaterThan(0);
   });
 
   it("marks whether each request has a conversation and links existing ones", async () => {
@@ -119,14 +147,38 @@ describe("RequestsActivityPanel — requests lead, by urgency", () => {
       />,
     );
 
+    await user.click(screen.getByRole("tab", { name: /Open requests/ }));
     expect(screen.getByText("In conversation")).toBeInTheDocument();
-    expect(screen.getByText("No conversation yet")).toBeInTheDocument();
+    expect(screen.getAllByText("No conversation yet").length).toBeGreaterThan(
+      0,
+    );
 
     await user.click(screen.getByRole("button", { name: /Upload your 1098/ }));
     expect(onSelectThread).toHaveBeenCalledWith("t-request");
   });
 
-  it("shows an empty state when there are no open requests", () => {
+  it("lets you switch tabs freely even when a plate item is deep-linked", async () => {
+    const user = userEvent.setup();
+    // Arrive focused on a plate item (as the dashboard action deep-links).
+    baseRender(
+      <MemoryRouter initialEntries={["/?focus=open-item:p-1"]}>
+        <RequestsActivityPanel
+          taxReturn={makeReturn(OPEN_ITEMS)}
+          threads={THREADS}
+          viewerFamily="firm"
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Verify the 8879")).toBeInTheDocument();
+
+    // Peeking at Open requests must stick — the focus must not snap us back.
+    await user.click(screen.getByRole("tab", { name: /Open requests/ }));
+    expect(screen.getByText("Confirm bank details")).toBeInTheDocument();
+    expect(screen.queryByText("Verify the 8879")).not.toBeInTheDocument();
+  });
+
+  it("shows an empty state under the Open requests tab when there are none", async () => {
+    const user = userEvent.setup();
     render(
       <RequestsActivityPanel
         taxReturn={makeReturn([{ id: "p", label: "x", owner: "preparer" }])}
@@ -134,6 +186,7 @@ describe("RequestsActivityPanel — requests lead, by urgency", () => {
         viewerFamily="firm"
       />,
     );
+    await user.click(screen.getByRole("tab", { name: /Open requests/ }));
     expect(screen.getByText("No open requests.")).toBeInTheDocument();
   });
 });

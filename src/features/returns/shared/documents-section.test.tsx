@@ -59,7 +59,7 @@ describe("DocumentsSection — the uploaded-files library", () => {
     });
     expect(viewDocument).toHaveAttribute(
       "href",
-      "https://cdn.ledgerline.example/documents/doc-w2-acme.pdf",
+      "https://cdn.ledgerline.example/documents/doc-w2-acme-nguyen.pdf",
     );
     // The fields it feeds are listed, and the connections are navigable.
     expect(

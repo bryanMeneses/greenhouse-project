@@ -7,6 +7,8 @@ type ReturnViewProps = {
   return: Return;
   /** Forwarded to each Field for inspecting its value (→ provenance, challenge 01). */
   onInspectField?: (fieldId: string) => void;
+  /** Commit a directly-editable Field's new value (challenge 08). */
+  onEditField?: (fieldId: string, value: number) => void;
 };
 
 /**
@@ -16,6 +18,7 @@ type ReturnViewProps = {
 export function ReturnView({
   return: taxReturn,
   onInspectField,
+  onEditField,
 }: ReturnViewProps) {
   return (
     <div className="grid w-full grid-cols-1 items-start gap-6 md:grid-cols-2">
@@ -24,6 +27,7 @@ export function ReturnView({
           key={section.id}
           section={section}
           onInspectField={onInspectField}
+          onEditField={onEditField}
         />
       ))}
     </div>
@@ -33,9 +37,11 @@ export function ReturnView({
 function ReturnSection({
   section,
   onInspectField,
+  onEditField,
 }: {
   section: Return["sections"][number];
   onInspectField?: (fieldId: string) => void;
+  onEditField?: (fieldId: string, value: number) => void;
 }) {
   const headingId = React.useId();
 
@@ -52,7 +58,12 @@ function ReturnSection({
       </h2>
       <div className="divide-y divide-border px-5">
         {section.fields.map((field) => (
-          <FieldRow key={field.id} field={field} onInspect={onInspectField} />
+          <FieldRow
+            key={field.id}
+            field={field}
+            onInspect={onInspectField}
+            onEdit={onEditField}
+          />
         ))}
       </div>
     </section>

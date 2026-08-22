@@ -201,6 +201,18 @@ export function openRequests(items: OpenItem[]): OpenItem[] {
 }
 
 /**
+ * The Return's "on your plate" Open Items — Preparer-owned actions that aren't
+ * Closed — ordered by urgency (high first), then original order. The counterpart
+ * to `openRequests`: together they partition every active Open Item by whose court
+ * the next move is in, so the Requests panel can lead with the Preparer's own work.
+ */
+export function preparerOpenItems(items: OpenItem[]): OpenItem[] {
+  return items
+    .filter((item) => !isRequest(item) && isOpenItemActive(item))
+    .sort((a, b) => urgencyRank(a) - urgencyRank(b));
+}
+
+/**
  * Who owns the next action on an Open Item, or `null` once it's Closed (nothing
  * left to own). Answerable at every state — the guarantee ADR-0008 makes about a
  * Thread's "who owns next".

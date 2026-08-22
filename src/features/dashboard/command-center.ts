@@ -1,4 +1,5 @@
 import type { ReturnAreaId } from "@/features/returns/shared/areas";
+import type { ConnectionTarget } from "@/features/returns/shared/connections";
 import { lowConfidenceAwaitingReview } from "@/features/returns/shared/review-queue";
 import {
   isOpenItemActive,
@@ -137,11 +138,18 @@ export type ActionItem = {
   client: string;
   returnId: string;
   /**
-   * The Area deep link this row opens — the Return's review workspace (Overview),
-   * where the actual work happens. Preparer-owned Open Items land here too (not the
-   * Requests Area, which surfaces Client-owned Requests), so a row never dead-ends.
+   * The Area deep link this row opens. A review batch lands on the Return's review
+   * workspace (Overview) as a whole; a Preparer-owned Open Item lands in the Requests
+   * Area, focused on itself (see `focus`), so a row arrives *at the work*, never on a
+   * generic screen and never a dead-end.
    */
   area: ReturnAreaId;
+  /**
+   * The specific object within that Area to scroll to and highlight (challenge 04),
+   * when the row addresses one — a Preparer-owned Open Item focuses itself. Absent for
+   * the review batch, which opens the Overview workspace as a whole.
+   */
+  focus?: ConnectionTarget;
   /** Shared deadline phrase (the Return's, since Open Items inherit its clock). */
   deadline: string;
   /** Whether it should read as pressing — drives the row's alert vs. neutral marker. */
@@ -181,7 +189,8 @@ function actionsForReturn(ranked: RankedReturn): ActionItem[] {
       label: item.label,
       client: taxReturn.client,
       returnId: taxReturn.id,
-      area: "overview",
+      area: "requests",
+      focus: { kind: "open-item", id: item.id },
       deadline,
       urgent: returnIsUrgent || item.urgency === "high",
     });
